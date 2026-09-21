@@ -9,7 +9,7 @@ resolve_worktree_root() {
   local root="${WORKTREE_ROOT:-}"
   if [[ -z "$root" ]]; then
     if [[ -d "/mnt/c" ]]; then
-      root="G:/Repository/Worktrees"
+      root="C:/Entwicklung/Worktrees"
     else
       root="$HOME/Repository/Worktrees"
     fi
@@ -19,8 +19,10 @@ resolve_worktree_root() {
   # arrives as the literal string "$HOME/..."; expand it here.
   # (psmux additionally keeps the surrounding quotes as literal chars —
   #  strip them defensively; on real tmux they are already removed.)
-  root="${root%\"}"; root="${root#\"}"
-  root="${root%\'}"; root="${root#\'}"
+  root="${root%\"}"
+  root="${root#\"}"
+  root="${root%\'}"
+  root="${root#\'}"
   root="${root/\$HOME/$HOME}"
   echo "$root"
 }

@@ -47,7 +47,7 @@ Remove-Item Env:\TMUX -ErrorAction SilentlyContinue
 
 function Resolve-WorktreeRoot {
     $root = $env:WORKTREE_ROOT
-    if (-not $root) { $root = 'G:/Repository/Worktrees' }
+    if (-not $root) { $root = 'C:/Entwicklung/Worktrees' }
     # psmux's set-environment stores the raw string including surrounding
     # quotes ("G:/..."), unlike real tmux which strips them as syntax.
     $root = $root.Trim().Trim('"').Trim("'").Trim()
