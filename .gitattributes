@@ -1,0 +1,14 @@
+# Force LF line endings for the Linux/WSL and cross-platform (Shared) trees,
+# regardless of the checking-out OS's core.autocrlf setting. These are shell
+# scripts, dotfiles, and tmux configs that get symlinked into a Linux/WSL
+# $HOME and executed via `#!/bin/bash` — CRLF breaks shebangs and inline
+# word-splitting (e.g. a trailing \r glued onto the last argument on a line).
+# Verified needed 2026-09-15: this Windows-side checkout had core.autocrlf=
+# input, which does not reconvert already-checked-out CRLF content, and the
+# working tree genuinely had CRLF in these files.
+Linux/** text eol=lf
+Shared/** text eol=lf
+
+# Windows-only files (PowerShell, GlazeWM yaml) are left to git's default
+# behavior — no forced normalization needed since they're only ever read on
+# Windows.
