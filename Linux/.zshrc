@@ -57,13 +57,28 @@ fi
 #
 
 
-alias repo='cd /mnt/g/Repository/'
+alias repo='cd /mnt/c/Entwicklung'
 export PATH="$HOME/.local/bin:$PATH"
 export PATH="$HOME/.local/scripts:$PATH"
+export PATH="$HOME/.dotnet/tools:$PATH"
 
-activateMise() {
-  eval "$(~/.local/bin/mise activate zsh)"
+lg()
+{
+    export LAZYGIT_NEW_DIR_FILE=~/.lazygit/newdir
+
+    lazygit "$@"
+
+    if [ -f $LAZYGIT_NEW_DIR_FILE ]; then
+            cd "$(cat $LAZYGIT_NEW_DIR_FILE)"
+            rm -f $LAZYGIT_NEW_DIR_FILE > /dev/null
+    fi
 }
+
+
+alias glab="mise exec glab@1.76.2 -- glab"
+# activate Mise to install dependencies
+eval "$(~/.local/bin/mise activate zsh)"
+
 
 gitkey() {
   eval "$(ssh-agent -s)"
@@ -99,3 +114,39 @@ if [ -z "$TMUX" ]; then
     fi
 fi
 
+
+# opencode
+export PATH=/home/mlange/.opencode/bin:$PATH
+
+# zoxide
+eval "$(zoxide init zsh)"
+
+# Trust the OS certificate store in Node.js (needed for internal corporate
+# CAs like IBKRZ-CA imported via update-ca-certificates)
+export NODE_OPTIONS="--use-system-ca"
+
+eval "$(starship init zsh)"
+
+
+alias bat="batcat"
+alias ls='eza'
+alias ll='eza -l --header --icons'
+alias la='eza -la --header --icons'
+alias tree='eza --tree --level=3'
+
+source <(fzf --zsh)
+
+# Shadow git repo for BIL's local-only LLM workflow artifacts
+# (.scratch, oracle_forms, CONTEXT.md, docs/adr, AGENTS.md, docs/agents) —
+# not part of the shared BIL repo. See ~/.local/share/llm-workflows/BIL.git
+# and https://github.com/mlange-ibk/bil-llm-workflow
+bil-llm() {
+  git --git-dir="$HOME/.local/share/llm-workflows/BIL.git" --work-tree="/home/mlange/code/ameh/BIL" "$@"
+}
+
+# git-worktree helper for BIL: work on multiple branches / review GitLab
+# merge requests at the same time. See
+# /home/mlange/code/ameh/BIL/.scratch/worktree-tools/README.md
+bil-worktree() {
+  /home/mlange/code/ameh/BIL/.scratch/worktree-tools/bil-worktree "$@"
+}
