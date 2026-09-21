@@ -131,7 +131,6 @@ window_rules:
     match:
       # Ignores any Zebar windows.
       - window_process: { equals: 'zebar' }
-      - window_title: { regex: "League of Legends" }
 
       # Ignores picture-in-picture windows for browsers.
       - window_title: { regex: '[Pp]icture.in.[Pp]icture' }
@@ -177,7 +176,7 @@ window_rules:
   # Comms
   - commands: ['move --workspace 6']
     match:
-      - window_process: { regex: 'thunderbird|ms-teams' }
+      - window_process: { regex: 'OUTLOOK|ms-teams' }
 
   # Dev GUI
   - commands: ['move --workspace 5']
@@ -188,7 +187,7 @@ window_rules:
   # Home
   - commands: ['move --workspace 1']
     match:
-      - window_process: { regex: 'obsidian|superproductivity' }
+      - window_process: { regex: 'obsidian|Super Productivity' }
 
 
 binding_modes:
@@ -302,7 +301,7 @@ keybindings:
   - commands: ['shell-exec cmd']
     bindings: ['alt+enter']
 
-  - commands: ['shell-exec --hide-window pwsh -ExecutionPolicy Bypass -File G:\Repository\Machine_Setups\Windows\Tools\keybindings\keybindings-lookup.ps1']
+  - commands: ['shell-exec --hide-window pwsh -ExecutionPolicy Bypass -File C:\Entwicklung\Machine_Setups\Windows\Tools\keybindings\keybindings-lookup.ps1']
     bindings: ['alt+shift+g']
 
   # Focus the next/previous workspace defined in `workspaces` config.
