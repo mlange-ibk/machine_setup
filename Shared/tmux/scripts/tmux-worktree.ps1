@@ -327,11 +327,51 @@ switch ($type) {
     }
     'clone' {
         $cloneUrl = ''
+        # Merge GitHub (gh) and GitLab (glab) repos into a single fzf list, each
+        # row tab-delimited as "<clone-url>`t[Provider] <path>" so the
+        # already-correct API-provided URL can be lifted straight out of the
+        # selection with no manual URL construction (and no
+        # github.com/gitlab.com hardcoding — glab's URL reflects whatever host
+        # `glab auth login` configured, so this also works against
+        # self-hosted GitLab instances). Both branches parse JSON natively via
+        # ConvertFrom-Json, so no extra dependency (jq) is needed on Windows,
+        # unlike the bash port.
+        $candidates = [System.Collections.Generic.List[string]]::new()
         if (Get-Command gh -ErrorAction SilentlyContinue) {
-            $ghRows = @(& gh api 'user/repos?affiliation=owner,collaborator,organization_member&per_page=100' --paginate --jq '.[] .full_name' 2>$null)
-            $ghChoice = $ghRows | & fzf --prompt 'repo> ' --header 'Choose a repo (Esc to paste URL manually)' 2>$null
-            $ghChoice = $ghChoice | Select-Object -First 1
-            if ($ghChoice) { $cloneUrl = "https://github.com/$ghChoice.git" }
+            # Respect the user's configured git protocol (`gh config get
+            # git_protocol`, per-host, defaults to https) rather than
+            # hardcoding https — an ssh-configured host would otherwise hit
+            # an interactive credential prompt on `git clone` from inside
+            # the popup.
+            $ghProtocol = (& gh config get git_protocol -h github.com 2>$null | Out-String).Trim()
+            $ghJson = & gh api 'user/repos?affiliation=owner,collaborator,organization_member&per_page=100' --paginate 2>$null
+            if ($ghJson) {
+                try {
+                    @($ghJson | ConvertFrom-Json) | ForEach-Object {
+                        $url = if ($ghProtocol -eq 'ssh') { $_.ssh_url } else { $_.clone_url }
+                        $candidates.Add("$url`t[GitHub] $($_.full_name)")
+                    }
+                }
+                catch { }
+            }
+        }
+        if (Get-Command glab -ErrorAction SilentlyContinue) {
+            $glabProtocol = (& glab config get git_protocol 2>$null | Out-String).Trim()
+            $glabJson = & glab api 'projects?membership=true&per_page=100' --paginate 2>$null
+            if ($glabJson) {
+                try {
+                    @($glabJson | ConvertFrom-Json) | ForEach-Object {
+                        $url = if ($glabProtocol -eq 'ssh') { $_.ssh_url_to_repo } else { $_.http_url_to_repo }
+                        $candidates.Add("$url`t[GitLab] $($_.path_with_namespace)")
+                    }
+                }
+                catch { }
+            }
+        }
+        if ($candidates.Count -gt 0) {
+            $repoChoice = $candidates | & fzf --delimiter "`t" --with-nth 2 --prompt 'repo> ' --header 'Choose a repo (Esc to paste URL manually)' 2>$null
+            $repoChoice = @($repoChoice) | Select-Object -First 1
+            if ($repoChoice) { $cloneUrl = ($repoChoice -split "`t")[0] }
         }
         if (-not $cloneUrl) { $cloneUrl = Read-Host 'Git clone URL' }
         if (-not $cloneUrl) { exit 0 }

@@ -150,19 +150,49 @@ a separate `git`/`lazygit` decision.
 
 ## 4. Clone flow
 
-Step 1 is an fzf picker over the GitHub REST API via the `gh` CLI:
+Step 1 is a single fzf picker fed by **both** GitHub (`gh`) and GitLab
+(`glab`) REST APIs, whichever are installed/authenticated. Rows from both
+providers are merged into one list, tagged `[GitHub]`/`[GitLab]`:
 
 ```
-gh api 'user/repos?affiliation=owner,collaborator,organization_member&per_page=100' --paginate --jq '.[] .full_name'
+gh api   'user/repos?affiliation=owner,collaborator,organization_member&per_page=100' --paginate --jq '.[] | "\(.clone_url)\t[GitHub] \(.full_name)"'
+glab api 'projects?membership=true&per_page=100' --paginate | jq -r '.[] | "\(.http_url_to_repo)\t[GitLab] \(.path_with_namespace)"'
 ```
 
-The `affiliation=owner,collaborator,organization_member` trio is deliberate:
-the plain `gh repo list` only returns repos you *own*, which would hide
-private repos you are invited to and org repos. This endpoint returns
-everything your account can see.
+Each row is tab-delimited as `<clone-url>\t<label>` (mirroring the outer
+picker's own row convention) — fzf only displays the label (`--with-nth 2`),
+and the already-correct, API-provided clone URL is lifted straight out of
+the selection with `cut -f1`. No URL is ever hand-assembled from a hostname
+constant, so this works unmodified against self-hosted GitLab instances
+(whatever host `glab auth login` configured) and GitHub Enterprise.
 
-If `gh` is missing/unauthenticated, or the repo is a public repo you have no
-affiliation with, the flow degrades to a manual URL paste.
+The endpoint choices are deliberate:
+- `gh`: the plain `gh repo list` only returns repos you *own*, which would
+  hide private repos you are invited to and org repos. The
+  `affiliation=owner,collaborator,organization_member` trio returns
+  everything your account can see.
+- `glab`: `membership=true` is GitLab's closest equivalent — projects you're
+  a direct member of *or* that belong to a group you're a member of
+  (covering the owner/invited/org-member cases GitHub's trio covers).
+
+**Git protocol (ssh vs https)**: the clone URL field is chosen per-provider
+to match each CLI's own configured protocol
+(`gh config get git_protocol -h github.com` /
+`glab config get git_protocol`, both default to `https`) — using `.ssh_url`
+/ `.ssh_url_to_repo` when configured for ssh. This avoids a `git clone`
+inside the popup hanging on an interactive credential prompt when a host is
+ssh-configured but has no cached https credentials.
+
+`glab api` has no built-in `--jq` filter (unlike `gh`, which bundles one), so
+the GitLab branch on the **bash/Linux** script pipes through an external
+`jq` binary — treated as an *additional optional* dependency exactly like
+`gh`/`glab` themselves: if `glab` or `jq` is missing, that branch is simply
+skipped. The **PowerShell/Windows** script needs no extra dependency for
+either provider — it parses both APIs' JSON natively via `ConvertFrom-Json`.
+
+If neither `gh` nor `glab` produces any rows (missing/unauthenticated), or
+the picker is Escaped, the flow degrades to a manual URL paste — unchanged
+from before.
 
 The clone creates a bare repo and normalizes it in four steps so the
 worktree flow works identically for every branch:

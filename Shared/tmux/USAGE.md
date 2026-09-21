@@ -27,7 +27,7 @@ worktree>
 | a worktree (live or not)        | open its 5-window session                 |
 | a branch with no worktree       | create worktree + open session            |
 | "+ New branch"                  | ask for a name, worktree + open session   |
-| "+ Clone new repository"        | pick from your GitHub (or paste URL), clone + open session |
+| "+ Clone new repository"        | pick from your GitHub/GitLab (or paste URL), clone + open session |
 
 Keys: `s` = switch only, `c` = checkout/clone.
 
@@ -54,7 +54,8 @@ Keys: `s` = switch only, `c` = checkout/clone.
 
 **Clone a new repo**
 `<prefix>w` → pick `+ Clone new repository` → choose from the fzf list (your
-own + invited + org repos). No `gh`? Paste `https://…git` manually.
+own + invited + org repos, from both GitHub and GitLab if both are set up).
+Neither `gh` nor `glab`? Paste `https://…git` manually.
 
 ## Folders
 
@@ -77,5 +78,7 @@ you've confirmed the worktree looks right.
 ## Something broken?
 
 Dependencies needed: `fzf`, `git`, `neovim`, `lazygit`, `lazysql`, `opencode`,
-`gh` (optional, for the clone picker). See `README.md` for the technical
-details on the picker, config fork, and the migration algorithm.
+`gh` (optional, for GitHub in the clone picker), `glab` (optional, for
+GitLab in the clone picker — on Linux also needs `jq`; Windows needs
+nothing extra). See `README.md` for the technical details on the picker,
+config fork, and the migration algorithm.

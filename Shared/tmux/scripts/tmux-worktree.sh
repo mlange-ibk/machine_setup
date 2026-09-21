@@ -234,12 +234,41 @@ case "$TYPE" in
 
   clone)
     clone_url=""
+    # Merge GitHub (gh) and GitLab (glab) repos into a single fzf list, each
+    # row tab-delimited as "<clone-url>\t[Provider] <path>" so the already-
+    # correct API-provided URL can be lifted straight out of the selection
+    # with no manual URL construction (and no github.com/gitlab.com
+    # hardcoding — glab's URL reflects whatever host `glab auth login`
+    # configured, so this also works against self-hosted GitLab instances).
+    candidates=()
     if command -v gh >/dev/null 2>&1; then
-      repo_row="$(gh api 'user/repos?affiliation=owner,collaborator,organization_member&per_page=100' --paginate \
-        --jq '.[] .full_name' | fzf --prompt 'repo> ' --header 'Choose a repo (Esc to paste URL manually)' || true)"
-      if [[ -n "$repo_row" ]]; then
-        clone_url="https://github.com/$repo_row.git"
-      fi
+      # Respect the user's configured git protocol (`gh config get
+      # git_protocol`, per-host, defaults to https) rather than hardcoding
+      # https — an ssh-configured host would otherwise hit an interactive
+      # credential prompt on `git clone` from inside the popup.
+      gh_field='.clone_url'
+      [[ "$(gh config get git_protocol -h github.com 2>/dev/null)" == "ssh" ]] && gh_field='.ssh_url'
+      while IFS= read -r row; do
+        [[ -n "$row" ]] && candidates+=("$row")
+      done < <(gh api 'user/repos?affiliation=owner,collaborator,organization_member&per_page=100' --paginate \
+        --jq ".[] | \"\\(${gh_field})\t[GitHub] \\(.full_name)\"" 2>/dev/null)
+    fi
+    # glab has no built-in --jq (unlike gh), so filtering its JSON needs an
+    # external jq — treated as optional exactly like gh: if either glab or
+    # jq is missing, this branch is silently skipped, same degrade-to-manual
+    # behavior as today.
+    if command -v glab >/dev/null 2>&1 && command -v jq >/dev/null 2>&1; then
+      glab_field='.http_url_to_repo'
+      [[ "$(glab config get git_protocol 2>/dev/null)" == "ssh" ]] && glab_field='.ssh_url_to_repo'
+      while IFS= read -r row; do
+        [[ -n "$row" ]] && candidates+=("$row")
+      done < <(glab api 'projects?membership=true&per_page=100' --paginate 2>/dev/null \
+        | jq -r ".[] | \"\\(${glab_field})\t[GitLab] \\(.path_with_namespace)\"" 2>/dev/null)
+    fi
+    if (( ${#candidates[@]} > 0 )); then
+      repo_row="$(printf '%s\n' "${candidates[@]}" | fzf --delimiter '\t' --with-nth 2 \
+        --prompt 'repo> ' --header 'Choose a repo (Esc to paste URL manually)' || true)"
+      clone_url="$(printf '%s' "$repo_row" | cut -f1)"
     fi
     if [[ -z "$clone_url" ]]; then
       echo -n "Git clone URL: " >&2
