@@ -117,13 +117,13 @@ workspaces:
     display_name: "6 - Comms"
     keep_alive: false
   - name: "7"
-    display_name: "7 - Musik"
-    keep_alive: true
+    display_name: "7"
+    keep_alive: false
   - name: "8"
-    display_name: "8 - Media"
+    display_name: "8"
     keep_alive: false
   - name: "9"
-    display_name: "9 - Gaming"
+    display_name: "9"
     keep_alive: false
 
 window_rules:
