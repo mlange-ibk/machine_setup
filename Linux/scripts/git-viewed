@@ -1,0 +1,283 @@
+#!/usr/bin/env bash
+# git-viewed: locally track which files in a diff you've already reviewed,
+# GitLab MR "mark file as viewed" style - entirely local (nothing pushed or
+# synced anywhere). A file's viewed-mark automatically resets if its diff
+# content changes again, just like GitLab's real feature.
+#
+# Usage:
+#   git viewed [<base-ref>]     Interactive review UI (fzf + delta).
+#   git viewed --list [<base>]  Plain-text checklist, no UI.
+#   git viewed --reset          Clear viewed-state for the current branch.
+#
+# <base-ref> defaults to origin/develop. State is stored per-repo, per-branch
+# under .git/viewed-state/, keyed by (base, merge-base) so it self-invalidates
+# if the diff range shifts.
+#
+# Requires: git, fzf, delta, jq. Optional: neovim (only needed for the 'v' key).
+
+set -euo pipefail
+
+SELF="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/$(basename "${BASH_SOURCE[0]}")"
+
+usage() {
+  cat <<'EOF'
+Usage: git viewed [<base-ref>] [--list] [--reset] [-h|--help]
+
+  <base-ref>   Ref to diff against (default: origin/develop).
+  --list       Print the checklist as plain text, no interactive UI.
+  --reset      Clear viewed-state for the current branch and exit.
+  -h, --help   Show this help.
+
+Interactive mode (default) starts in NORMAL mode, vim-style:
+  NORMAL  j/k move   enter view diff (delta)   v view diff (neovim, full
+          file context)   tab toggle viewed   q/esc/ctrl-c quit   / search
+  SEARCH  type to fuzzy-filter   enter/esc/ctrl-c back to NORMAL
+EOF
+}
+
+die() {
+  echo "git-viewed: $*" >&2
+  exit 1
+}
+
+require() { command -v "$1" >/dev/null 2>&1 || die "'$1' is required but not found in PATH"; }
+
+# ---------------------------------------------------------------------------
+# Core helpers, parameterized by BASE so internal recursive invocations
+# (from fzf key bindings) reuse exactly the same base/merge-base as the
+# parent run instead of re-defaulting.
+# ---------------------------------------------------------------------------
+
+state_file_for() {
+  local git_dir branch safe_branch
+  git_dir=$(git rev-parse --git-dir) || die "not a git repository"
+  branch=$(git rev-parse --abbrev-ref HEAD)
+  [[ "$branch" == "HEAD" ]] && branch="detached-$(git rev-parse --short HEAD)"
+  safe_branch=$(printf '%s' "$branch" | tr '/' '_')
+  mkdir -p "$git_dir/viewed-state"
+  echo "$git_dir/viewed-state/$safe_branch.json"
+}
+
+ensure_state() {
+  local state_file="$1" base="$2" merge_base="$3"
+  local stored_base="" stored_mb=""
+  if [[ -f "$state_file" ]]; then
+    stored_base=$(jq -r '.base // ""' "$state_file")
+    stored_mb=$(jq -r '.mergeBase // ""' "$state_file")
+  fi
+  if [[ "$stored_base" != "$base" || "$stored_mb" != "$merge_base" ]]; then
+    jq -n --arg base "$base" --arg mb "$merge_base" \
+      '{base: $base, mergeBase: $mb, files: {}}' >"$state_file"
+  fi
+}
+
+diff_hash_for() {
+  local merge_base="$1" file="$2"
+  git diff --no-renames "$merge_base"..HEAD -- "$file" | sha1sum | awk '{print $1}'
+}
+
+is_viewed() {
+  local state_file="$1" merge_base="$2" file="$3" stored current
+  stored=$(jq -r --arg f "$file" '.files[$f] // ""' "$state_file")
+  [[ -z "$stored" ]] && return 1
+  current=$(diff_hash_for "$merge_base" "$file")
+  [[ "$stored" == "$current" ]]
+}
+
+toggle_viewed() {
+  local state_file="$1" merge_base="$2" file="$3" tmp
+  tmp="$state_file.tmp.$$"
+  if is_viewed "$state_file" "$merge_base" "$file"; then
+    jq --arg f "$file" 'del(.files[$f])' "$state_file" >"$tmp" && mv "$tmp" "$state_file"
+  else
+    local hash
+    hash=$(diff_hash_for "$merge_base" "$file")
+    jq --arg f "$file" --arg h "$hash" '.files[$f] = $h' "$state_file" >"$tmp" && mv "$tmp" "$state_file"
+  fi
+}
+
+resolve_merge_base() {
+  git merge-base "$1" HEAD 2>/dev/null || die "could not compute merge-base with '$1' (does that ref exist / is it fetched?)"
+}
+
+changed_files_for() {
+  git diff --no-renames --name-only "$1"..HEAD
+}
+
+# lines are TAB-separated: mark <TAB> stats <TAB> file
+build_lines() {
+  local base="$1" merge_base="$2" state_file="$3"
+  local numstat
+  numstat=$(git diff --no-renames --numstat "$merge_base"..HEAD)
+  while IFS= read -r file; do
+    [[ -z "$file" ]] && continue
+    local stats add del
+    stats=$(printf '%s\n' "$numstat" | awk -F'\t' -v f="$file" '$3 == f {printf "%s %s", $1, $2}')
+    read -r add del <<<"$stats"
+    [[ -z "${add:-}" ]] && add="0"
+    [[ -z "${del:-}" ]] && del="0"
+    local stat_str="+${add}/-${del}"
+    if is_viewed "$state_file" "$merge_base" "$file"; then
+      printf '\033[32m[x]\033[0m\t%s\t%s\n' "$stat_str" "$file"
+    else
+      printf '\033[33m[ ]\033[0m\t%s\t%s\n' "$stat_str" "$file"
+    fi
+  done < <(changed_files_for "$merge_base")
+}
+
+count_viewed() {
+  local merge_base="$1" state_file="$2" n=0
+  while IFS= read -r file; do
+    [[ -z "$file" ]] && continue
+    is_viewed "$state_file" "$merge_base" "$file" && n=$((n + 1))
+  done < <(changed_files_for "$merge_base")
+  echo "$n"
+}
+
+count_total() {
+  changed_files_for "$1" | sed '/^$/d' | wc -l | tr -d ' '
+}
+
+# ---------------------------------------------------------------------------
+# Internal subcommands, used by fzf key bindings to recurse into this same
+# script with the exact same base the parent run resolved.
+# ---------------------------------------------------------------------------
+
+if [[ "${1:-}" == "--internal-list" ]]; then
+  base="$2"
+  merge_base=$(resolve_merge_base "$base")
+  state_file=$(state_file_for)
+  ensure_state "$state_file" "$base" "$merge_base"
+  build_lines "$base" "$merge_base" "$state_file"
+  exit 0
+fi
+
+if [[ "${1:-}" == "--internal-toggle" ]]; then
+  base="$2"
+  file=$(cut -f3 <<<"$3")
+  merge_base=$(resolve_merge_base "$base")
+  state_file=$(state_file_for)
+  ensure_state "$state_file" "$base" "$merge_base"
+  toggle_viewed "$state_file" "$merge_base" "$file"
+  exit 0
+fi
+
+if [[ "${1:-}" == "--internal-nvim-diff" ]]; then
+  base="$2"
+  file=$(cut -f3 <<<"$3")
+  require nvim
+  merge_base=$(resolve_merge_base "$base")
+
+  ext="${file##*.}"
+  suffix=""
+  [[ "$ext" != "$file" ]] && suffix=".$ext"
+
+  tmp_base=$(mktemp "${TMPDIR:-/tmp}/git-viewed-base.XXXXXX$suffix")
+  tmp_head=$(mktemp "${TMPDIR:-/tmp}/git-viewed-head.XXXXXX$suffix")
+  trap 'rm -f "$tmp_base" "$tmp_head"' EXIT
+
+  # Full files, not just the diff hunk - so extra context is a plain scroll
+  # away in either direction. Empty side = the file is new/deleted.
+  git show "$merge_base:$file" >"$tmp_base" 2>/dev/null || : >"$tmp_base"
+  git show "HEAD:$file" >"$tmp_head" 2>/dev/null || : >"$tmp_head"
+
+  nvim -R -d "$tmp_base" "$tmp_head"
+  exit 0
+fi
+
+# ---------------------------------------------------------------------------
+# Public CLI
+# ---------------------------------------------------------------------------
+
+BASE="origin/develop"
+MODE="interactive"
+
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+  --list)
+    MODE="list"
+    shift
+    ;;
+  --reset)
+    MODE="reset"
+    shift
+    ;;
+  -h | --help)
+    usage
+    exit 0
+    ;;
+  --)
+    shift
+    break
+    ;;
+  -*) die "unknown flag: $1 (see --help)" ;;
+  *)
+    BASE="$1"
+    shift
+    ;;
+  esac
+done
+
+require git
+git rev-parse --git-dir >/dev/null 2>&1 || die "not inside a git repository"
+
+STATE_FILE=$(state_file_for)
+
+if [[ "$MODE" == "reset" ]]; then
+  rm -f "$STATE_FILE"
+  echo "git-viewed: cleared viewed-state for the current branch."
+  exit 0
+fi
+
+require jq
+MERGE_BASE=$(resolve_merge_base "$BASE")
+ensure_state "$STATE_FILE" "$BASE" "$MERGE_BASE"
+
+TOTAL=$(count_total "$MERGE_BASE")
+if [[ "$TOTAL" -eq 0 ]]; then
+  echo "git-viewed: no changes between $BASE (merge-base $(git rev-parse --short "$MERGE_BASE")) and HEAD."
+  exit 0
+fi
+
+if [[ "$MODE" == "list" ]]; then
+  VIEWED=$(count_viewed "$MERGE_BASE" "$STATE_FILE")
+  echo "Viewed $VIEWED/$TOTAL files (base: $BASE, merge-base: $(git rev-parse --short "$MERGE_BASE"))"
+  build_lines "$BASE" "$MERGE_BASE" "$STATE_FILE" | while IFS=$'\t' read -r mark stat file; do
+    printf '%b %-10s %s\n' "$mark" "$stat" "$file"
+  done
+  exit 0
+fi
+
+require fzf
+require delta
+
+VIEWED=$(count_viewed "$MERGE_BASE" "$STATE_FILE")
+export MERGE_BASE BASE SELF
+
+HEADER=$(printf 'git-viewed   base=%s   viewed=%s/%s
+NORMAL  j/k move   enter diff(delta)   v diff(neovim)   tab toggle viewed   q/esc/ctrl-c quit   / search
+SEARCH  type to fuzzy-filter, enter/esc/ctrl-c back to NORMAL' "$BASE" "$VIEWED" "$TOTAL")
+
+"$SELF" --internal-list "$BASE" | fzf \
+  --ansi \
+  --no-input \
+  --delimiter='\t' \
+  --with-nth=1,2,3 \
+  --header="$HEADER" \
+  --preview="git diff --no-renames '$MERGE_BASE'..HEAD -- {3} | delta --width=\${FZF_PREVIEW_COLUMNS:-\$(tput cols)}" \
+  --preview-window=down:60%,wrap \
+  --bind='j:down,k:up,q:abort,v:execute("$SELF" --internal-nvim-diff "$BASE" "$FZF_CURRENT_ITEM"),/:show-input+unbind(j,k,q,v,/)' \
+  --bind='tab:execute-silent("$SELF" --internal-toggle "$BASE" "$FZF_CURRENT_ITEM")+reload("$SELF" --internal-list "$BASE")' \
+  --bind='enter,esc,ctrl-c:transform:
+    if [[ $FZF_INPUT_STATE = enabled ]]; then
+      echo "rebind(j,k,q,v,/)+hide-input"
+    elif [[ $FZF_KEY = enter ]]; then
+      file=$(cut -f3 <<< "$FZF_CURRENT_ITEM")
+      echo "execute(git diff --no-renames $MERGE_BASE..HEAD -- \"$file\" | delta --paging=always)"
+    else
+      echo abort
+    fi' \
+  >/dev/null || true
+
+FINAL_VIEWED=$(count_viewed "$MERGE_BASE" "$STATE_FILE")
+echo "git-viewed: $FINAL_VIEWED/$TOTAL files marked viewed (base: $BASE)."
