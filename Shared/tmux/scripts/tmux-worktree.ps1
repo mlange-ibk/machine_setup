@@ -12,7 +12,10 @@
       - "+ New branch in <repo>"                  -> Enter prompts for a branch name
       - "+ Clone new repository"                  -> Enter clones via gh (or URL paste)
 
-    Keys: Enter = smart default   s = switch only   c = checkout/clone only   d = delete worktree.
+    Keys (modal, vi-style, mirroring Linux/scripts/git-viewed):
+      NORMAL  j/k move   Enter go   s switch   c checkout/clone   d delete
+             worktree   / search   q quit
+      SEARCH  type to fuzzy-filter, Enter/Esc/Ctrl-C back to NORMAL
     Rows are tab-separated:  type <TAB> repo <TAB> ref <TAB> label
 
     Why PowerShell and not bash: psmux executes display-popup commands through
@@ -259,17 +262,74 @@ foreach ($repo in @(Get-BareRepos $Root)) {
 
 $rows.Add('clone' + "`t" + '' + "`t" + '' + "`t+ Clone new repository")
 
+# ── fzf ──────────────────────────────────────────────────────────────────────
+#
+# Modal (vi-style) UI, mirroring Linux/scripts/git-viewed and tmux-worktree.sh:
+# the picker STARTS in NORMAL mode with the input hidden (--no-input), `/`
+# drops into SEARCH and unbinds every NORMAL-mode letter key so it can be typed
+# as filter text, and Enter/Esc/Ctrl-C run a `transform` that branches on
+# $FZF_INPUT_STATE to either return to NORMAL or act. `enter` itself is
+# deliberately NOT unbound when entering SEARCH — it has to stay bound to that
+# transform to be able to leave SEARCH again.
+#
+# The transform needs a shell, and fzf picks that shell from $SHELL, falling
+# back to cmd.exe on Windows. A psmux popup has no $SHELL, so under cmd.exe the
+# bash snippet below would print nothing at all and Enter would silently become
+# a dead key (no accept, no abort, no error) — hence --with-shell, pointed at
+# Git Bash. `bash` on PATH is NOT usable for this: on this machine it resolves
+# to WSL's C:\Windows\System32\bash.exe (the same trap tmux.windows.conf
+# documents for its popup bind-keys), so the path is built from
+# $env:ProgramFiles instead of resolved off PATH.
+$gitBash = Join-Path $env:ProgramFiles 'Git\bin\bash.exe'
+if (-not (Test-Path -LiteralPath $gitBash)) {
+    throw "Git Bash not found at '$gitBash'. It is required to run fzf's transform action (fzf would otherwise fall back to cmd.exe, where the transform below produces no actions at all and Enter becomes a dead key). tmux.windows.conf already depends on this install."
+}
+
+# `--expect` cannot be used for `d` here: fzf intercepts --expect keys in its
+# event loop BEFORE consulting the keymap, and --expect keys are not in the
+# keymap at all, so `unbind(d)` cannot disable them. With `/` search that means
+# typing any "d" in a filter (dev, dod, feature/added-…) would accept the
+# highlighted row AS A DELETE. fzf's own documented replacement is the `print`
+# action (fzf >= 0.53): `print()` keeps the familiar two-line output (key line,
+# then row) so the parsing further down is unchanged, and `print(d)` reports
+# the delete key. Verified against fzf 0.67.0.
+#
+# Single-quoted here-string on purpose: `$FZF_INPUT_STATE` / `$FZF_KEY` have to
+# reach Git Bash unexpanded by PowerShell. The two deliberate deviations from
+# git-viewed (clear-query on the way back to NORMAL, and print() instead of
+# --expect) are documented in tmux-worktree.sh.
+$viTransform = @'
+if [[ $FZF_INPUT_STATE = enabled ]]; then
+  echo "rebind(j,k,q,s,c,d,/)+clear-query+hide-input"
+elif [[ $FZF_KEY = enter ]]; then
+  echo accept
+else
+  echo abort
+fi
+'@
+
+$header = @(
+    'worktree'
+    'NORMAL  j/k move   enter go   s switch   c checkout/clone   d delete worktree   / search   q quit'
+    'SEARCH  type to fuzzy-filter, enter/esc/ctrl-c back to NORMAL'
+) -join "`n"
+
 $listFile = New-TemporaryFile
 try {
     Set-Content -Path $listFile -Value $rows -Encoding utf8
 
     $fzfArgs = @(
+        '--no-input',
         '--with-nth', '4',
         '--delimiter', "`t",
         '--prompt', 'worktree> ',
-        '--header', 'Enter: go · s: switch · c: checkout/clone · d: delete worktree',
-        '--bind', 'enter:accept,s:accept,c:accept',
-        '--expect', 'd'
+        '--header', $header,
+        '--with-shell', $gitBash,
+        '--bind', 'j:down,k:up,q:abort',
+        '--bind', '/:show-input+unbind(j,k,q,s,c,d,/)',
+        '--bind', 's,c:print()+accept',
+        '--bind', 'd:print(d)+accept',
+        '--bind', "enter,esc,ctrl-c:transform:`n$viTransform"
     )
     $raw = Get-Content $listFile | & fzf @fzfArgs 2>$null
 }
@@ -278,10 +338,10 @@ finally {
 }
 
 if (-not $raw) { exit 0 }
-# fzf's `--expect` makes it print TWO lines whenever it's set, regardless of
-# which key completed the selection: line 1 is the expect-key indicator
-# (empty string for a plain Enter/s/c accept, "d" when d completed it), line
-# 2 is the actual selected row. Verified empirically against the installed
+# fzf prints TWO lines whenever an accept key is bound with `print()` above,
+# regardless of which key completed the selection: line 1 is the key marker
+# (empty for a plain Enter accept, "d" when d completed it), line 2 is the
+# actual selected row. Verified empirically against the installed
 # fzf build (2026-09-14): `$raw[0]` is genuinely just the key, never the row
 # — a previous version of this script read `$raw[0]` as if it already
 # contained the tab-separated row, which silently produced an always-empty
@@ -369,7 +429,27 @@ switch ($type) {
             }
         }
         if ($candidates.Count -gt 0) {
-            $repoChoice = $candidates | & fzf --delimiter "`t" --with-nth 2 --prompt 'repo> ' --header 'Choose a repo (Esc to paste URL manually)' 2>$null
+            $repoHeader = @(
+                'Choose a repo (Esc to paste URL manually)'
+                'NORMAL  j/k move   enter pick   / search   q quit'
+                'SEARCH  type to fuzzy-filter, enter/esc/ctrl-c back to NORMAL'
+            ) -join "`n"
+            # Same modal bindings as the main picker, minus s/c/d (there is
+            # nothing to delete here) so its rebind list is shorter.
+            $repoTransform = @'
+if [[ $FZF_INPUT_STATE = enabled ]]; then
+  echo "rebind(j,k,q,/)+clear-query+hide-input"
+elif [[ $FZF_KEY = enter ]]; then
+  echo accept
+else
+  echo abort
+fi
+'@
+            $repoChoice = $candidates | & fzf --no-input --delimiter "`t" --with-nth 2 --prompt 'repo> ' --header $repoHeader `
+                --with-shell $gitBash `
+                --bind 'j:down,k:up,q:abort' `
+                --bind '/:show-input+unbind(j,k,q,/)' `
+                --bind "enter,esc,ctrl-c:transform:`n$repoTransform" 2>$null
             $repoChoice = @($repoChoice) | Select-Object -First 1
             if ($repoChoice) { $cloneUrl = ($repoChoice -split "`t")[0] }
         }

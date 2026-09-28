@@ -114,6 +114,23 @@ un-worktree'd origin branches
 
 ### Actions
 
+The picker is **modal, vi-style**, starting in NORMAL mode with the input
+hidden (`--no-input`) — the same interaction model as `Linux/scripts/git-viewed`:
+
+| Mode   | Keys                                                                                                                                   |
+|--------|----------------------------------------------------------------------------------------------------------------------------------------|
+| NORMAL | `j`/`k` move · `Enter` go · `s` switch · `c` checkout/clone · `d` delete worktree · `/` search · `q` quit (`Esc`/`Ctrl-C` also quit) |
+| SEARCH | type to fuzzy-filter; `Enter`/`Esc`/`Ctrl-C` return to NORMAL                                                                          |
+
+`/` drops into SEARCH and `unbind`s every NORMAL-mode letter key (`j k q s c
+d /`) so they can be typed as filter text — without that, a `d` in a query like
+`dev` would fire the delete action instead of filtering. `Enter` is
+deliberately *not* unbound: it has to stay bound to the `transform` that leaves
+SEARCH again. The transform is fzf's own documented pattern
+(`$FZF_INPUT_STATE` / `$FZF_KEY` from
+[the fzf manual](https://github.com/junegunn/fzf#input-and-execution)) and
+needs a shell — see the `--with-shell` caveat below.
+
 | Row type | `Enter` (smart)                                  | `s` (switch)         | `c` (checkout/clone)  | `d` (delete)                       |
 |----------|--------------------------------------------------|----------------------|-----------------------|------------------------------------|
 | `switch` | switch into session (create if missing)          | switch               | *(ignored)*           | delete worktree + its session      |
@@ -121,12 +138,13 @@ un-worktree'd origin branches
 | `newbranch`| prompt for branch name → worktree + session     | *(ignored)*          | same as Enter         | *(ignored)*                        |
 | `clone`  | gh-picker / URL → bare clone → worktree → session| *(ignored)*          | same as Enter         | *(ignored)*                        |
 
-`Enter`, `s` and `c` resolve to the same `Enter` accept
-(`enter:accept,s:accept,c:accept`), so those three keys perform the same
-action, determined purely by the row's `type` field. `d` is the exception:
-`--expect d` makes fzf report the key that was pressed, and `d` only has
-meaning on `switch` rows — it deletes the worktree instead of switching in
-(see [Removing a worktree](#removing-a-worktree)).
+`Enter`, `s` and `c` all resolve to the same accept
+(`s,c:print()+accept`; `Enter` goes through the transform above), so those
+three keys perform the same action, determined purely by the row's `type`
+field. `d` is the exception: it is bound to `d:print(d)+accept` and fzf echoes
+the key back on stdout, and `d` only has meaning on `switch` rows — it deletes
+the worktree instead of switching in (see
+[Removing a worktree](#removing-a-worktree)).
 
 `switch_or_attach` prefers `tmux switch-client` (we are inside tmux — the
 picker runs in a popup) and falls back to `attach-session`.
@@ -357,6 +375,28 @@ Linux: `./linkconfig.sh` (symlinks need no elevation).
 
 ## 9. Known caveats
 
+- **The picker needs fzf ≥ 0.53** (`print` action; `transform` needs ≥ 0.45,
+  `--with-shell` ≥ 0.51). `d` is bound as `d:print(d)+accept` rather than
+  `--expect d` because `--expect` keys are intercepted in fzf's event loop
+  *before* the keymap is consulted and are not in the keymap at all — so
+  `unbind(d)` cannot disable them, and any `d` typed into a `/` filter (`dev`,
+  `feature/added-…`) would accept the highlighted row **as a delete**.
+  `print()` keeps the two-line stdout shape (key line, then row) both scripts
+  already parse. Verified against fzf 0.67.0.
+- **`tmux-worktree.ps1` needs Git Bash for the `transform` action**
+  (`--with-shell`): fzf picks the shell for `execute`/`transform`/`preview`
+  from `$SHELL` and falls back to `cmd.exe` on Windows, where the bash snippet
+  would print nothing and `Enter` would silently become a dead key. A psmux
+  popup has no `$SHELL`, and `bash` on PATH resolves to WSL's
+  `C:\Windows\System32\bash.exe` (the same trap the `bind-key B`/`b` comments
+  describe), so the path is built from `$env:ProgramFiles` and the script
+  throws if it is missing. `tmux-worktree.sh` needs no equivalent: on Linux
+  `$SHELL` already is a POSIX shell.
+- **`print()` and a `clear-query` deviation from `git-viewed`**: the picker
+  adds `clear-query` to the NORMAL-mode rebind, which `git-viewed` does not.
+  Leaving a filter applied while the input is hidden shows a silently
+  shortened list with no visible reason why, which invites picking (or
+  `d`-deleting) the wrong row.
 - **Name collisions**: session names are repo-qualified (`<repo>-<branch>`),
   so two repos on the same branch (`master`/`dev`/`main`) cannot collide. The
   surviving conflict is intra-repo: branches that sanitize to the same string
@@ -407,10 +447,11 @@ Linux: `./linkconfig.sh` (symlinks need no elevation).
   it (3.3.8 was available over winget at time of writing, vs. the 3.3.6
   tested here — unverified whether it changes this).
 - **The picker did nothing on Enter/`s`/`c`/`d`, on both platforms, for
-  every selection** (found and fixed 2026-09-15): `fzf --expect` makes fzf
-  print **two lines** whenever it's set, regardless of which key completed
-  the selection — line 1 is the expect-key indicator (empty string for a
-  plain Enter/`s`/`c` accept, `d` when `d` completed it), line 2 is the
+  every selection** (found and fixed 2026-09-15): the key-marker mechanism
+  (`--expect d` at the time, `print()`/`print(d)` since — see the first
+  caveat above) makes fzf print **two lines** on every accept, regardless of
+  which key completed the selection — line 1 is the key marker (empty string
+  for a plain Enter/`s`/`c` accept, `d` when `d` completed it), line 2 is the
   actual selected row. Verified empirically against the installed fzf build.
   Both `tmux-worktree.ps1` (`Select-Object -First 1` on the raw output) and
   `tmux-worktree.sh` (`head -n1` before splitting into key/choice) only ever

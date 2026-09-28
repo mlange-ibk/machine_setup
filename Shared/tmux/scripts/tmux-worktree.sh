@@ -6,7 +6,9 @@
 #   • branches with no worktree yet           → Enter checks out into a new worktree
 #   • "+ New branch in <repo>"                → Enter prompts for a branch name
 #   • "+ Clone new repository"                → Enter clones via gh (or URL paste) + worktree
-# Keys:  Enter = smart default   s = switch only   c = checkout/clone only   d = delete worktree
+# Keys:  NORMAL  j/k move   Enter go   s switch   c checkout/clone   d delete
+#              worktree   / search   q quit
+#        SEARCH  type to fuzzy-filter, Enter/Esc/Ctrl-C back to NORMAL
 #
 # Rows are tab-separated:  type ⇥ repo ⇥ ref ⇥ label
 
@@ -172,22 +174,59 @@ printf 'clone\t\t\t+ Clone new repository\n'
 } > "$LIST_TMP"
 
 # ── fzf ─────────────────────────────────────────────────────────────────────
+#
+# Modal (vi-style) UI, mirroring Linux/scripts/git-viewed: the picker STARTS in
+# NORMAL mode with the input hidden (`--no-input`), `/` drops into SEARCH and
+# unbinds every NORMAL-mode letter key so it can be typed as filter text, and
+# Enter/Esc/Ctrl-C run a `transform` that branches on $FZF_INPUT_STATE to either
+# return to NORMAL or act. `enter` itself is deliberately NOT unbound when
+# entering SEARCH — it has to stay bound to that transform to be able to leave
+# SEARCH again.
+#
+# Two deliberate deviations from git-viewed:
+#   * `clear-query` on the way back to NORMAL. Leaving a filter applied while
+#     the input is hidden shows a silently-shortened list with no visible
+#     reason why, which invites picking (or `d`-deleting) the wrong row.
+#   * `print()` instead of `--expect d` (see the comment above the accept
+#     bindings below).
+HEADER='worktree
+NORMAL  j/k move   enter go   s switch   c checkout/clone   d delete worktree   / search   q quit
+SEARCH  type to fuzzy-filter, enter/esc/ctrl-c back to NORMAL'
 
+# `--expect` cannot be used for `d` here: fzf intercepts --expect keys in its
+# event loop BEFORE consulting the keymap, and --expect keys are not in the
+# keymap at all, so `unbind(d)` cannot disable them. With `/` search that means
+# typing any "d" in a filter (dev, dod, feature/added-…) would accept the
+# highlighted row AS A DELETE. fzf's own documented replacement is the `print`
+# action (fzf >= 0.53): `print()` keeps the familiar two-line output (key line,
+# then row) so the parsing further down is unchanged, and `print(d)` reports
+# the delete key. Verified against fzf 0.67.0.
 RAW="$(cat "$LIST_TMP" | fzf \
+  --no-input \
   --with-nth 4 \
   --delimiter '\t' \
   --prompt 'worktree> ' \
-  --header 'Enter: go · s: switch · c: checkout/clone · d: delete worktree' \
-  --bind 'enter:accept,s:accept,c:accept' \
-  --expect d \
+  --header "$HEADER" \
+  --bind 'j:down,k:up,q:abort' \
+  --bind '/:show-input+unbind(j,k,q,s,c,d,/)' \
+  --bind 's,c:print()+accept' \
+  --bind 'd:print(d)+accept' \
+  --bind 'enter,esc,ctrl-c:transform:
+    if [[ $FZF_INPUT_STATE = enabled ]]; then
+      echo "rebind(j,k,q,s,c,d,/)+clear-query+hide-input"
+    elif [[ $FZF_KEY = enter ]]; then
+      echo accept
+    else
+      echo abort
+    fi' \
   --preview 'echo {3}')" || true
 
 [[ -n "$RAW" ]] || exit 0
 
-# fzf's `--expect` makes it print TWO lines whenever it's set, regardless of
-# which key completed the selection: line 1 is the expect-key indicator
-# (empty string for a plain Enter/s/c accept, "d" when d completed it), line
-# 2 is the actual selected row. Verified empirically (2026-09-14): a
+# fzf prints TWO lines whenever an accept key is bound with `print()` above,
+# regardless of which key completed the selection: line 1 is the key marker
+# (empty for a plain Enter accept, "d" when d completed it), line 2 is the
+# actual selected row. Verified empirically (2026-09-14): a
 # previous version of this script read line 1 twice (once for KEY via
 # `cut -f1`, once for CHOICE via `cut -f2-`) as if it already contained the
 # tab-separated row — but line 1 has no tabs at all, so `cut -f2-` on it
@@ -266,8 +305,24 @@ case "$TYPE" in
         | jq -r ".[] | \"\\(${glab_field})\t[GitLab] \\(.path_with_namespace)\"" 2>/dev/null)
     fi
     if (( ${#candidates[@]} > 0 )); then
-      repo_row="$(printf '%s\n' "${candidates[@]}" | fzf --delimiter '\t' --with-nth 2 \
-        --prompt 'repo> ' --header 'Choose a repo (Esc to paste URL manually)' || true)"
+      repo_header='Choose a repo (Esc to paste URL manually)
+NORMAL  j/k move   enter pick   / search   q quit
+SEARCH  type to fuzzy-filter, enter/esc/ctrl-c back to NORMAL'
+      # Same modal bindings as the main picker, minus s/c/d (there is
+      # nothing to delete here) so its rebind list is shorter.
+      repo_row="$(printf '%s\n' "${candidates[@]}" | fzf --no-input \
+        --delimiter '\t' --with-nth 2 \
+        --prompt 'repo> ' --header "$repo_header" \
+          --bind 'j:down,k:up,q:abort' \
+          --bind '/:show-input+unbind(j,k,q,/)' \
+          --bind 'enter,esc,ctrl-c:transform:
+            if [[ $FZF_INPUT_STATE = enabled ]]; then
+              echo "rebind(j,k,q,/)+clear-query+hide-input"
+            elif [[ $FZF_KEY = enter ]]; then
+              echo accept
+            else
+              echo abort
+            fi' || true)"
       clone_url="$(printf '%s' "$repo_row" | cut -f1)"
     fi
     if [[ -z "$clone_url" ]]; then

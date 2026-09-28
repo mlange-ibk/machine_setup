@@ -8,11 +8,10 @@ One session per git worktree. One keybind to get anywhere.
 
 ## What you see
 
-An fzf popup listing every worktree and branch. Filter with typing, pick with
-`Enter`.
+An fzf popup listing every worktree and branch. `j`/`k` to move, `/` to filter,
+pick with `Enter`.
 
 ```
-worktree>
   1/2 → machine-setups                      (live session)
   [repo] some-branch          (new worktree)
   [repo] feature/x            (new worktree)
@@ -29,7 +28,8 @@ worktree>
 | "+ New branch"                  | ask for a name, worktree + open session   |
 | "+ Clone new repository"        | pick from your GitHub/GitLab (or paste URL), clone + open session |
 
-Keys: `s` = switch only, `c` = checkout/clone.
+Keys: `s` = switch only, `c` = checkout/clone, `d` = delete worktree,
+`q`/`Esc` = quit, `/` = search (then `Enter`/`Esc`/`Ctrl-C` to go back).
 
 ## The 5 windows of every session
 
