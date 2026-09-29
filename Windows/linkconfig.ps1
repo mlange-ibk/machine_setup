@@ -22,6 +22,8 @@ $mappings = @(
     @{ source = '../Shared/tmux/tmux.windows.conf'; destination = '.tmux.os.conf' }
     @{ source = '../Shared/tmux/scripts'; destination = '.local/scripts/worktree' }
     @{ source = 'config/herdr/config.toml'; destination = 'AppData/Roaming/herdr/config.toml' }
+    @{ source = 'config/herdr-plus'; destination = 'AppData/Roaming/herdr/plugins/config/cloudmanic.herdr-plus' }
+    @{ source = '../Linux/.config/nvim'; destination = 'AppData/Local/nvim' }
 )
 
 $srcRoot = $PSScriptRoot

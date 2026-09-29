@@ -1,0 +1,23 @@
+name = "BIL"
+description = "BIL (AMEH)"
+group = "AMEH"
+working_dir = "C:\Entwicklung\Worktrees"
+
+[[tabs]]
+name = "1: nvim"
+command = "nvim"
+
+[[tabs]]
+name = "2: lazygit"
+command = "lazygit"
+
+[[tabs]]
+name = "3: run"
+
+[[tabs]]
+name = "4: db"
+command = "lazysql"
+
+[[tabs]]
+name = "5: opencode"
+command = "opencode"
