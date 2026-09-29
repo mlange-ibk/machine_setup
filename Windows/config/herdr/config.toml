@@ -1,0 +1,17 @@
+onboarding = false
+
+[terminal]
+default_shell = "pwsh"
+
+[theme]
+name = "catppuccin"
+auto_switch = false
+
+[ui]
+status_indicators = "symbols"
+
+[ui.sound]
+enabled = false
+
+[ui.toast]
+delivery = "terminal"

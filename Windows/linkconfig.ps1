@@ -21,6 +21,7 @@ $mappings = @(
     @{ source = '../Shared/tmux/tmux.conf'; destination = '.tmux.conf' }
     @{ source = '../Shared/tmux/tmux.windows.conf'; destination = '.tmux.os.conf' }
     @{ source = '../Shared/tmux/scripts'; destination = '.local/scripts/worktree' }
+    @{ source = 'config/herdr/config.toml'; destination = 'AppData/Roaming/herdr/config.toml' }
 )
 
 $srcRoot = $PSScriptRoot
