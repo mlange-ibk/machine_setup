@@ -57,7 +57,6 @@ fi
 #
 
 
-alias repo='cd /mnt/c/Entwicklung'
 export PATH="$HOME/.local/bin:$PATH"
 export PATH="$HOME/.local/scripts:$PATH"
 export PATH="$HOME/.dotnet/tools:$PATH"
@@ -75,7 +74,7 @@ lg()
 }
 
 
-alias glab="mise exec glab@1.76.2 -- glab"
+alias glab="mise exec glab@1.120.0 -- glab"
 # activate Mise to install dependencies
 eval "$(~/.local/bin/mise activate zsh)"
 
