@@ -168,11 +168,6 @@ window_rules:
     match:
       - window_title: { regex: '\[MUSIC\]|Webradio' }
 
-  # Media
-  - commands: ['move --workspace 8']
-    match:
-      - window_title: { regex: '\[MEDIA\]' }
-
   # Comms
   - commands: ['move --workspace 6']
     match:
@@ -216,23 +211,27 @@ binding_modes:
 keybindings:
   # Shift focus in a given direction.
   - commands: ['focus --direction left']
-    bindings: ['alt+h', 'alt+left']
+    #bindings: ['alt+h', 'alt+left']
+    bindings: ['alt+left']
   - commands: ['focus --direction right']
-    bindings: ['alt+l', 'alt+right']
+    #bindings: ['alt+l', 'alt+right']
+    bindings: ['alt+right']
   - commands: ['focus --direction up']
-    bindings: ['alt+k', 'alt+up']
+    #bindings: ['alt+k', 'alt+up']
+    bindings: ['alt+up']
   - commands: ['focus --direction down']
-    bindings: ['alt+j', 'alt+down']
+    #bindings: ['alt+j', 'alt+down']
+    bindings: ['alt+down']
 
   # Move focused window in a given direction.
-  - commands: ['move --direction left']
-    bindings: ['alt+shift+h', 'alt+shift+left']
-  - commands: ['move --direction right']
-    bindings: ['alt+shift+l', 'alt+shift+right']
-  - commands: ['move --direction up']
-    bindings: ['alt+shift+k', 'alt+shift+up']
-  - commands: ['move --direction down']
-    bindings: ['alt+shift+j', 'alt+shift+down']
+  #- commands: ['move --direction left']
+  #  bindings: ['alt+shift+h', 'alt+shift+left']
+  #- commands: ['move --direction right']
+  #  bindings: ['alt+shift+l', 'alt+shift+right']
+  #- commands: ['move --direction up']
+  #  bindings: ['alt+shift+k', 'alt+shift+up']
+  #- commands: ['move --direction down']
+  #  bindings: ['alt+shift+j', 'alt+shift+down']
 
   # Resize focused window by a percentage or pixel amount.
   #- commands: ['resize --width -2%']

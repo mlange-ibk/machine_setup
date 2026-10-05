@@ -57,7 +57,6 @@ fi
 #
 
 
-alias repo='cd /mnt/c/Entwicklung'
 export PATH="$HOME/.local/bin:$PATH"
 export PATH="$HOME/.local/scripts:$PATH"
 export PATH="$HOME/.dotnet/tools:$PATH"
@@ -75,7 +74,7 @@ lg()
 }
 
 
-alias glab="mise exec glab@1.76.2 -- glab"
+alias glab="mise exec glab@1.120.0 -- glab"
 # activate Mise to install dependencies
 eval "$(~/.local/bin/mise activate zsh)"
 
@@ -150,3 +149,58 @@ bil-llm() {
 bil-worktree() {
   /home/mlange/code/ameh/BIL/.scratch/worktree-tools/bil-worktree "$@"
 }
+# --- BIL LLM workflow: append this block to ~/.zshrc ---
+
+# Shadow git repo for BIL's local-only LLM workflow artifacts
+# (.scratch, oracle_forms, CONTEXT.md, docs/adr, AGENTS.md, docs/agents) —
+# not part of the shared BIL repo. See ~/.local/share/llm-workflows/BIL.git
+# and https://github.com/mlange-ibk/bil-llm-workflow
+bil-llm() {
+  git --git-dir="$HOME/.local/share/llm-workflows/BIL.git" --work-tree="/home/mlange/code/ameh/BIL" "$@"
+}
+
+# git-worktree helper for BIL: work on multiple branches / review GitLab
+# merge requests at the same time. See
+# /home/mlange/code/ameh/BIL/.scratch/worktree-tools/README.md
+bil-worktree() {
+  /home/mlange/code/ameh/BIL/.scratch/worktree-tools/bil-worktree "$@"
+}
+
+# Sandcastle setup: symlink + npm install check
+# Creates symlink from .sandcastle to .scratch/sandcastle and installs deps if needed
+setup-sandcastle() {
+  local BIL_ROOT="/home/mlange/code/ameh/BIL"
+  local SANDBOX_SRC="$BIL_ROOT/.scratch/sandcastle"
+  local SANDBOX_LINK="$BIL_ROOT/.sandcastle"
+  
+  # Remove existing symlink if present
+  if [ -L "$SANDBOX_LINK" ]; then
+    echo "Removing existing symlink..."
+    unlink "$SANDBOX_LINK"
+  fi
+  
+  # Create fresh symlink
+  echo "Creating symlink: $SANDBOX_LINK -> $SANDBOX_SRC"
+  ln -s "$SANDBOX_SRC" "$SANDBOX_LINK"
+  
+  # Check if node_modules exists, install if missing
+  if [ ! -d "$SANDBOX_SRC/node_modules" ]; then
+    echo "Installing npm dependencies..."
+    cd "$SANDBOX_SRC"
+    npm install
+    cd - > /dev/null
+  else
+    echo "✓ node_modules already present"
+  fi
+  
+  echo "✓ Sandcastle setup complete!"
+  echo ""
+  echo "Usage:"
+  echo "  cd $BIL_ROOT"
+  echo "  npx tsx .sandcastle/orchestrate-tickets.ts"
+}
+
+# --- end BIL LLM workflow block ---
+
+alias wm='workmux'
+eval "$(workmux completions zsh)"
