@@ -1,0 +1,104 @@
+#!/usr/bin/env bash
+# wmw — workmux launcher (bound to prefix-wp)
+# Pick a project, then open an existing worktree or branch as a workmux session.
+# Run inside a tmux pane so workmux can switch clients.
+set -euo pipefail
+
+export PATH="$HOME/.local/share/mise/shims:$PATH"
+
+# Show errors and keep the popup open so they are readable
+on_error() {
+    local line="$1" cmd="$2"
+    printf 'wmw: error on line %s: %s\n' "$line" "$cmd" >&2
+    printf 'Press Enter to close...' >&2
+    read -r _ || true
+}
+trap 'on_error "$LINENO" "$BASH_COMMAND"' ERR
+
+# Project roots to scan (edit as needed)
+ROOTS=("$HOME/code" "$HOME/machine_setups")
+
+if ! command -v fzf >/dev/null 2>&1; then
+    echo "wmw: fzf is required" >&2
+    exit 1
+fi
+if ! command -v fd >/dev/null 2>&1; then
+    echo "wmw: fd is required" >&2
+    exit 1
+fi
+
+list_projects() {
+    local d gitdir top
+    while IFS= read -r d; do
+        gitdir=$(git -C "$d" rev-parse --absolute-git-dir 2>/dev/null) || continue
+        top=$(git -C "$d" rev-parse --show-toplevel 2>/dev/null) || continue
+        if [[ "$gitdir" == "$top/.git" ]]; then
+            printf '%s\n' "$top"
+        fi
+    done < <(fd -H -d 3 '^\.git$' "${ROOTS[@]}" | sed -E 's|/\.git/?$||') | sort -u
+}
+
+list_targets() {
+    # Output: kind<TAB>label<TAB>path<TAB>target
+    local repo="$1" wt ref
+    while IFS=$'\t' read -r wt ref; do
+        [[ -z "${wt:-}" ]] && continue
+        printf 'wt\t\033[32m[wt]\033[0m %s (%s)\t%s\t%s\n' \
+            "$(basename "$wt")" "$ref" "$wt" "$(basename "$wt")"
+    done < <(
+        git -C "$repo" worktree list --porcelain | awk '
+      /^worktree / { wt = substr($0, 10) }
+      /^branch /   { ref = substr($0, 8); sub(/^refs\/heads\//, "", ref); if (wt) print wt "\t" ref }
+    '
+    )
+    local wt_branches
+    wt_branches=$(
+        git -C "$repo" worktree list --porcelain | awk '
+      /^worktree / { wt = substr($0, 10) }
+      /^branch /   { ref = substr($0, 8); sub(/^refs\/heads\//, "", ref); if (wt) print ref }
+    '
+    )
+    while IFS= read -r ref; do
+        [[ -z "$ref" ]] && continue
+        if ! grep -qxF "$ref" <<<"$wt_branches"; then
+            printf 'br\t\033[34m[br]\033[0m %s\t%s\t%s\n' "$ref" "$repo" "$ref"
+        fi
+    done < <(git -C "$repo" branch --format='%(refname:short)')
+}
+
+if [[ "${1:-}" == "--list" ]]; then
+    list_projects
+    exit 0
+fi
+
+main() {
+    local project
+    project=$(list_projects | fzf \
+        --prompt 'Project: ' \
+        --header 'workmux launcher — enter: select' \
+        --preview 'git -C {1} status --short --branch | head -30' \
+        --preview-window 'right:40%')
+    [[ -n "$project" ]] || return 0
+
+    local sel
+    sel=$(list_targets "$project" | fzf \
+        --prompt "Targets: " \
+        --header "$(basename "$project") — [wt] open worktree · [br] new workmux session from branch" \
+        --delimiter $'\t' \
+        --with-nth 2.. \
+        --no-sort \
+        --preview 'if [[ "{1}" == "wt" ]]; then git -C {3} status --short --branch | head -40; else git -C {3} log --oneline -10 {4}; fi' \
+        --preview-window 'right:40%')
+    [[ -n "$sel" ]] || return 0
+
+    local kind target path
+    IFS=$'\t' read -r kind _ path target <<<"$sel"
+
+    if [[ "$kind" == "wt" ]]; then
+        (cd "$path" && workmux open --mode session "$target")
+    else
+        (cd "$path" && workmux add --mode session "$target")
+    fi
+}
+
+main "$@"
