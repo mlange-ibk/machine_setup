@@ -245,19 +245,21 @@ Use it for `Machine_Setups`, `Elixir/event-sourcing/lunar_frontiers_1`, etc.
 
 ## 6. Cross-platform mechanics
 
-One config file, two OSes: psmux (the native Windows tmux) reads
-`~/.tmux.conf` as a fallback config path, so the same file in `$HOME` is
-picked up by both real tmux and psmux.
+One config file, two OSes: real tmux on Linux reads the XDG path
+`~/.config/tmux/tmux.conf`; psmux (the native Windows tmux) reads
+`~/.tmux.conf` as a fallback config path. The linkers point each OS at its
+own live location, so the same repo file serves both.
 
 `tmux.conf` does **no runtime OS detection** — the OS is known at deploy time,
 because different linkers run on each machine. The config sources one
 indirection file:
 
 ```
-source-file ~/.tmux.os.conf
+source-file ~/.config/tmux/tmux.os.conf
 ```
 
-`~/.tmux.os.conf` is a symlink chosen by the linker on each machine:
+`~/.config/tmux/tmux.os.conf` (Windows: `~/.tmux.os.conf`) is a symlink
+chosen by the linker on each machine:
 `linkconfig.ps1` → `tmux.windows.conf`, `linkconfig.sh` → `tmux.linux.conf`.
 This replaces an earlier `%if`/`if-shell` runtime fork, which **psmux silently
 does not support** (it swallows a `%if` block without warning, breaking every
@@ -348,9 +350,10 @@ picker/bootstrap remain bash; the two pickers share identical logic — the
 
 | Source (repo)                                          | Dest (live machine)        | OS      | Mechanism     |
 |--------------------------------------------------------|----------------------------|---------|---------------|
-| `Shared/tmux/tmux.conf`                                | `~/.tmux.conf`             | both    | symlink       |
+| `Shared/tmux/tmux.conf`                                | `~/.config/tmux/tmux.conf` | Linux   | symlink       |
+| `Shared/tmux/tmux.conf`                                | `~/.tmux.conf`             | Windows | symlink       |
 | `Shared/tmux/tmux.windows.conf`                        | `~/.tmux.os.conf`          | Windows | symlink       |
-| `Shared/tmux/tmux.linux.conf`                          | `~/.tmux.os.conf`          | Linux   | symlink       |
+| `Shared/tmux/tmux.linux.conf`                          | `~/.config/tmux/tmux.os.conf` | Linux | symlink       |
 | `Shared/tmux/scripts/**`                               | `~/.local/scripts/worktree`| both    | symlink (dir) |
 | `Windows/config/glazewm/config.yaml`                   | `.glzr/glazewm/config.yaml`| Windows | `linkconfig.ps1` |
 | everything above (`.zshrc`, `.config/nvim`, scripts…)  | `$HOME` / `~/.local/scripts`| Linux   | `linkconfig.sh` |
@@ -406,10 +409,10 @@ Linux: `./linkconfig.sh` (symlinks need no elevation).
   workflow are named after the branch alone (`dev`, `main`, `test`). The
   picker now looks for repo-qualified names and will recreate them under the
   new scheme; retire the old ones by hand (`tmux kill-session -t dev`).
-- **`source-file ~/.tmux.os.conf` resolves at server start** — the symlink is
-  read once when tmux/psmux boots. Re-run the linker after changing which OS
-  conf should win; edits to the *contents* just need `tmux source-file
-  ~/.tmux.conf`.
+- **`source-file ~/.config/tmux/tmux.os.conf` resolves at server start** —
+  the symlink is read once when tmux/psmux boots. Re-run the linker after
+  changing which OS conf should win; edits to the *contents* just need
+  `tmux source-file ~/.config/tmux/tmux.conf`.
 - **`display-popup -E`** closes the popup when the command ends — on psmux
   the second `fzf` (the gh clone picker) runs inside the first popup.
   Seamless in practice, but the popup won't "persist".
