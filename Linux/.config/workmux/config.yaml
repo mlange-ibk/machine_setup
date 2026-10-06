@@ -1,0 +1,23 @@
+nerdfont: true
+main_branch: develop
+mode: session
+agent: opencode
+
+windows:
+  - name: nvim
+    panes:
+      - command: nvim
+        focus: true
+  - name: lazygit
+    panes:
+      - command: lazygit
+  - name: run
+    panes:
+      - command: clear
+  - name: db
+    panes:
+      - command: lazysql
+  - name: opencode
+    panes:
+      - command: <agent>
+theme: night-sorbet
