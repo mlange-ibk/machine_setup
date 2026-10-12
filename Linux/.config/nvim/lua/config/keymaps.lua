@@ -39,3 +39,29 @@ vim.keymap.set("n", "<leader>j", "<cmd>lprev<CR>zz")
 -- \<<C-r><C-w>\> retrieves the word under the cursor for the search pattern.
 -- /<C-r><C-w>/gI<Left><Left><Left>
 vim.keymap.set("n", "<leader>r", [[:%s/\<<C-r><C-w>\>/<C-r><C-w>/gI<Left><Left><Left>]])
+
+-- Universelle Alt-hjkl-Navigation:
+-- Zuerst nvim-Fenster nutzen, damit sich Navigation innerhalb von nvim natürlich anfühlt.
+-- Falls nvim in die gewünschte Richtung kein Fenster hat, übernehmen wir tmux,
+-- damit man ohne Modifier-Wechsel auch zwischen nvim und tmux-Panes wechseln kann.
+local function alt_nav(dir)
+  local win = vim.api.nvim_get_current_win()
+
+  vim.cmd("silent! wincmd " .. dir)
+
+  if vim.api.nvim_get_current_win() == win then
+    if vim.env.TMUX then
+      local flags = { h = "-L", j = "-D", k = "-U", l = "-R" }
+      vim.fn.system({ "tmux", "select-pane", flags[dir] })
+    end
+  end
+end
+
+-- Nur Normalmodus belegen:
+-- Insert-, Terminal- und buffer-lokale Mappings sollen weiter funktionieren,
+-- z. B. Alt+h im Snacks Picker für Hidden Files.
+for _, dir in ipairs({ "h", "j", "k", "l" }) do
+  vim.keymap.set("n", "<a-" .. dir .. ">", function()
+    alt_nav(dir)
+  end, { desc = "Navigate nvim/tmux: " .. dir })
+end

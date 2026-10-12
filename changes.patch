@@ -1,0 +1,220 @@
+diff --git a/Linux/.config/nvim/lua/config/keymaps.lua b/Linux/.config/nvim/lua/config/keymaps.lua
+index 7e44801..8e89bf2 100644
+--- a/Linux/.config/nvim/lua/config/keymaps.lua
++++ b/Linux/.config/nvim/lua/config/keymaps.lua
+@@ -39,3 +39,29 @@ vim.keymap.set("n", "<leader>j", "<cmd>lprev<CR>zz")
+ -- \<<C-r><C-w>\> retrieves the word under the cursor for the search pattern.
+ -- /<C-r><C-w>/gI<Left><Left><Left>
+ vim.keymap.set("n", "<leader>r", [[:%s/\<<C-r><C-w>\>/<C-r><C-w>/gI<Left><Left><Left>]])
++
++-- Universelle Alt-hjkl-Navigation:
++-- Zuerst nvim-Fenster nutzen, damit sich Navigation innerhalb von nvim natürlich anfühlt.
++-- Falls nvim in die gewünschte Richtung kein Fenster hat, übernehmen wir tmux,
++-- damit man ohne Modifier-Wechsel auch zwischen nvim und tmux-Panes wechseln kann.
++local function alt_nav(dir)
++  local win = vim.api.nvim_get_current_win()
++
++  vim.cmd("silent! wincmd " .. dir)
++
++  if vim.api.nvim_get_current_win() == win then
++    if vim.env.TMUX then
++      local flags = { h = "-L", j = "-D", k = "-U", l = "-R" }
++      vim.fn.system({ "tmux", "select-pane", flags[dir] })
++    end
++  end
++end
++
++-- Nur Normalmodus belegen:
++-- Insert-, Terminal- und buffer-lokale Mappings sollen weiter funktionieren,
++-- z. B. Alt+h im Snacks Picker für Hidden Files.
++for _, dir in ipairs({ "h", "j", "k", "l" }) do
++  vim.keymap.set("n", "<a-" .. dir .. ">", function()
++    alt_nav(dir)
++  end, { desc = "Navigate nvim/tmux: " .. dir })
++end
+diff --git a/Linux/.config/workmux/config.yaml b/Linux/.config/workmux/config.yaml
+index 0b2d04b..ebdfa5c 100644
+--- a/Linux/.config/workmux/config.yaml
++++ b/Linux/.config/workmux/config.yaml
+@@ -20,4 +20,8 @@ windows:
+   - name: opencode
+     panes:
+       - command: <agent>
++
+ theme: night-sorbet
++
++dashboard:
++  close_on_jump: false
+diff --git a/Linux/scripts/tmux-fz b/Linux/scripts/tmux-fz
+new file mode 100755
+index 0000000..9e224f6
+--- /dev/null
++++ b/Linux/scripts/tmux-fz
+@@ -0,0 +1,27 @@
++#!/usr/bin/env bash
++# tmux-fz — fuzzy session switcher (bound to prefix-S)
++# Runs in a temp window of the current session (fzf-tmux style): no popup
++# overlay to tear down, so switch-client lands on the target session the
++# instant Enter is pressed. The window self-closes when this script exits.
++set -euo pipefail
++
++export PATH="$HOME/.local/share/mise/shims:$PATH"
++
++if ! command -v fzf >/dev/null 2>&1; then
++    echo "tmux-fz: fzf is required" >&2
++    printf 'Press Enter to close...' >&2
++    read -r _ || true
++    exit 1
++fi
++
++sel=$(tmux list-sessions -F $'#{session_name}\t#{session_windows}w  #{session_path}' \
++    | fzf --prompt 'Session: ' \
++        --header 'tmux sessions — enter: switch' \
++        --delimiter $'\t' \
++        --with-nth 1 \
++        --no-sort)
++
++[[ -n "$sel" ]] || exit 0
++
++name=${sel%%$'\t'*}
++tmux switch-client -t "$name"
+diff --git a/Linux/scripts/wmw b/Linux/scripts/wmw
+index 3e250aa..1bd6ba5 100755
+--- a/Linux/scripts/wmw
++++ b/Linux/scripts/wmw
+@@ -1,6 +1,6 @@
+ #!/usr/bin/env bash
+ # wmw — workmux launcher (bound to prefix-wp)
+-# Pick a project, then open an existing worktree or branch as a workmux session.
++# Pick a worktree or branch from any project and open it as a workmux session.
+ # Run inside a tmux pane so workmux can switch clients.
+ set -euo pipefail
+ 
+@@ -40,11 +40,12 @@ list_projects() {
+ 
+ list_targets() {
+     # Output: kind<TAB>label<TAB>path<TAB>target
+-    local repo="$1" wt ref
++    local repo="$1" repo_name wt ref
++    repo_name=$(basename "$repo")
+     while IFS=$'\t' read -r wt ref; do
+         [[ -z "${wt:-}" ]] && continue
+-        printf 'wt\t\033[32m[wt]\033[0m %s (%s)\t%s\t%s\n' \
+-            "$(basename "$wt")" "$ref" "$wt" "$(basename "$wt")"
++        printf 'wt\t\033[2m%s\033[0m \033[32m[wt]\033[0m %s (%s)\t%s\t%s\n' \
++            "$repo_name" "$(basename "$wt")" "$ref" "$wt" "$(basename "$wt")"
+     done < <(
+         git -C "$repo" worktree list --porcelain | awk '
+       /^worktree / { wt = substr($0, 10) }
+@@ -61,33 +62,34 @@ list_targets() {
+     while IFS= read -r ref; do
+         [[ -z "$ref" ]] && continue
+         if ! grep -qxF "$ref" <<<"$wt_branches"; then
+-            printf 'br\t\033[34m[br]\033[0m %s\t%s\t%s\n' "$ref" "$repo" "$ref"
++            printf 'br\t\033[2m%s\033[0m \033[34m[br]\033[0m %s\t%s\t%s\n' \
++                "$repo_name" "$ref" "$repo" "$ref"
+         fi
+     done < <(git -C "$repo" branch --format='%(refname:short)')
+ }
+ 
++list_all_targets() {
++    local repo
++    while IFS= read -r repo; do
++        list_targets "$repo"
++    done < <(list_projects)
++}
++
+ if [[ "${1:-}" == "--list" ]]; then
+-    list_projects
++    list_all_targets
+     exit 0
+ fi
+ 
+ main() {
+-    local project
+-    project=$(list_projects | fzf \
+-        --prompt 'Project: ' \
+-        --header 'workmux launcher — enter: select' \
+-        --preview 'git -C {1} status --short --branch | head -30' \
+-        --preview-window 'right:40%')
+-    [[ -n "$project" ]] || return 0
+-
+     local sel
+-    sel=$(list_targets "$project" | fzf \
+-        --prompt "Targets: " \
+-        --header "$(basename "$project") — [wt] open worktree · [br] new workmux session from branch" \
++    sel=$(list_all_targets | fzf \
++        --prompt 'Target: ' \
++        --header 'workmux launcher — [wt] open worktree · [br] new workmux session from branch' \
++        --ansi \
+         --delimiter $'\t' \
+         --with-nth 2.. \
+         --no-sort \
+-        --preview 'if [[ "{1}" == "wt" ]]; then git -C {3} status --short --branch | head -40; else git -C {3} log --oneline -10 {4}; fi' \
++        --preview 'case {1} in wt) git -C {3} status --short --branch | head -40 ;; *) git -C {3} log --oneline -10 {4} ;; esac' \
+         --preview-window 'right:40%')
+     [[ -n "$sel" ]] || return 0
+ 
+diff --git a/Shared/tmux/tmux.conf b/Shared/tmux/tmux.conf
+index 4a3b5a6..a607024 100644
+--- a/Shared/tmux/tmux.conf
++++ b/Shared/tmux/tmux.conf
+@@ -5,6 +5,15 @@ set -s escape-time 0
+ set -ga terminal-overrides ",xterm-256color*:Tc"
+ set-option -g default-terminal "xterm-256color"
+ 
++# ── make alt key work ─────────────────────────────────────────────────────────────────
++# Enable extended keys support
++set -g extended-keys on
++set -s extended-keys on
++# Use reliable CSI u format (tmux 3.5 or newer)
++set -g extended-keys-format csi-u
++# Optional: Force terminal feature recognition if auto-detect fails
++set -as terminal-features 'xterm*:extkeys'
++
+ # ── layout ─────────────────────────────────────────────────────────────────
+ set -g base-index 1
+ set -g pane-base-index 1
+@@ -23,10 +32,13 @@ unbind '"'
+ unbind %
+ 
+ # ── pane navigation (Alt-hjkl, no prefix) ──────────────────────────────────
+-bind -n M-h select-pane -L
+-bind -n M-l select-pane -R
+-bind -n M-k select-pane -U
+-bind -n M-j select-pane -D
++# In nvim: Alt-hjkl wird an nvim weitergereicht (siehe keymaps.lua: alt_nav),
++# damit nvim zuerst zwischen eigenen Fenstern wechselt und erst am Rand an
++# tmux übergibt. Außerhalb von nvim steuert Alt-hjkl direkt die tmux-Panes.
++bind -n M-h if-shell -F '#{==:#{pane_current_command},nvim}' 'send-keys M-h' 'select-pane -L'
++bind -n M-j if-shell -F '#{==:#{pane_current_command},nvim}' 'send-keys M-j' 'select-pane -D'
++bind -n M-k if-shell -F '#{==:#{pane_current_command},nvim}' 'send-keys M-k' 'select-pane -U'
++bind -n M-l if-shell -F '#{==:#{pane_current_command},nvim}' 'send-keys M-l' 'select-pane -R'
+ 
+ # ── bells / activity ───────────────────────────────────────────────────────
+ set -g visual-activity off
+@@ -40,7 +52,7 @@ set -g status-style fg=default
+ set -g status-left "#[fg=#cba6f7, bold] #S #[fg=default, nobold] | "
+ set -g status-left-length 250
+ set -g window-status-format "#I:#W"
+-set -g window-status-current-format "#[fg=#74c7ec] #I:#W🔵"
++set -g window-status-current-format "#[fg=#74c7ec] #I:#W"
+ set-option -g status-right " | #H"
+ 
+ # ── vi copy mode (the "y to copy" binding is OS-specific: xclip on Linux) ──
+diff --git a/Shared/tmux/tmux.linux.conf b/Shared/tmux/tmux.linux.conf
+index 419482d..48e80ae 100644
+--- a/Shared/tmux/tmux.linux.conf
++++ b/Shared/tmux/tmux.linux.conf
+@@ -13,6 +13,11 @@ bind-key w switch-client -T wm-choices
+ bind-key -T wm-choices p "display-popup -E -w 90% -h 90% ~/.local/scripts/wmw \; switch-client -T root"
+ bind-key -T wm-choices d "display-popup -E -w 80% -h 80% -T workmux workmux\ dashboard \; switch-client -T root"
+ 
++# Fuzzy session switcher: <prefix>S — lists all tmux sessions, fuzzy-filter,
++# enter to switch. Runs in a temp window (not a popup) so switch-client lands
++# on the target session immediately instead of waiting on popup teardown.
++bind-key S new-window "bash ~/.local/scripts/tmux-fz"
++
+ # old Primeagen sessionizer (ad-hoc ~/code directories) — real tmux supports
+ # `-r` (repeat: tap again within repeat-time without re-pressing the prefix).
+ bind-key -r f run-shell "bash ~/.local/scripts/tmux-sessionizer"

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # wmw — workmux launcher (bound to prefix-wp)
-# Pick a project, then open an existing worktree or branch as a workmux session.
+# Pick a worktree or branch from any project and open it as a workmux session.
 # Run inside a tmux pane so workmux can switch clients.
 set -euo pipefail
 
@@ -40,11 +40,12 @@ list_projects() {
 
 list_targets() {
     # Output: kind<TAB>label<TAB>path<TAB>target
-    local repo="$1" wt ref
+    local repo="$1" repo_name wt ref
+    repo_name=$(basename "$repo")
     while IFS=$'\t' read -r wt ref; do
         [[ -z "${wt:-}" ]] && continue
-        printf 'wt\t\033[32m[wt]\033[0m %s (%s)\t%s\t%s\n' \
-            "$(basename "$wt")" "$ref" "$wt" "$(basename "$wt")"
+        printf 'wt\t\033[2m%s\033[0m \033[32m[wt]\033[0m %s (%s)\t%s\t%s\n' \
+            "$repo_name" "$(basename "$wt")" "$ref" "$wt" "$(basename "$wt")"
     done < <(
         git -C "$repo" worktree list --porcelain | awk '
       /^worktree / { wt = substr($0, 10) }
@@ -61,33 +62,34 @@ list_targets() {
     while IFS= read -r ref; do
         [[ -z "$ref" ]] && continue
         if ! grep -qxF "$ref" <<<"$wt_branches"; then
-            printf 'br\t\033[34m[br]\033[0m %s\t%s\t%s\n' "$ref" "$repo" "$ref"
+            printf 'br\t\033[2m%s\033[0m \033[34m[br]\033[0m %s\t%s\t%s\n' \
+                "$repo_name" "$ref" "$repo" "$ref"
         fi
     done < <(git -C "$repo" branch --format='%(refname:short)')
 }
 
+list_all_targets() {
+    local repo
+    while IFS= read -r repo; do
+        list_targets "$repo"
+    done < <(list_projects)
+}
+
 if [[ "${1:-}" == "--list" ]]; then
-    list_projects
+    list_all_targets
     exit 0
 fi
 
 main() {
-    local project
-    project=$(list_projects | fzf \
-        --prompt 'Project: ' \
-        --header 'workmux launcher — enter: select' \
-        --preview 'git -C {1} status --short --branch | head -30' \
-        --preview-window 'right:40%')
-    [[ -n "$project" ]] || return 0
-
     local sel
-    sel=$(list_targets "$project" | fzf \
-        --prompt "Targets: " \
-        --header "$(basename "$project") — [wt] open worktree · [br] new workmux session from branch" \
+    sel=$(list_all_targets | fzf \
+        --prompt 'Target: ' \
+        --header 'workmux launcher — [wt] open worktree · [br] new workmux session from branch' \
+        --ansi \
         --delimiter $'\t' \
         --with-nth 2.. \
         --no-sort \
-        --preview 'if [[ "{1}" == "wt" ]]; then git -C {3} status --short --branch | head -40; else git -C {3} log --oneline -10 {4}; fi' \
+        --preview 'case {1} in wt) git -C {3} status --short --branch | head -40 ;; *) git -C {3} log --oneline -10 {4} ;; esac' \
         --preview-window 'right:40%')
     [[ -n "$sel" ]] || return 0
 

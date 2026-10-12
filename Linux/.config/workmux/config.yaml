@@ -20,4 +20,8 @@ windows:
   - name: opencode
     panes:
       - command: <agent>
+
 theme: night-sorbet
+
+dashboard:
+  close_on_jump: false

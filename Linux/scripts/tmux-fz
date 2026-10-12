@@ -1,0 +1,27 @@
+#!/usr/bin/env bash
+# tmux-fz — fuzzy session switcher (bound to prefix-S)
+# Runs in a temp window of the current session (fzf-tmux style): no popup
+# overlay to tear down, so switch-client lands on the target session the
+# instant Enter is pressed. The window self-closes when this script exits.
+set -euo pipefail
+
+export PATH="$HOME/.local/share/mise/shims:$PATH"
+
+if ! command -v fzf >/dev/null 2>&1; then
+    echo "tmux-fz: fzf is required" >&2
+    printf 'Press Enter to close...' >&2
+    read -r _ || true
+    exit 1
+fi
+
+sel=$(tmux list-sessions -F $'#{session_name}\t#{session_windows}w  #{session_path}' \
+    | fzf --prompt 'Session: ' \
+        --header 'tmux sessions — enter: switch' \
+        --delimiter $'\t' \
+        --with-nth 1 \
+        --no-sort)
+
+[[ -n "$sel" ]] || exit 0
+
+name=${sel%%$'\t'*}
+tmux switch-client -t "$name"
