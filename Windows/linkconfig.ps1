@@ -18,12 +18,12 @@ if (-not $isAdmin) {
 # Each entry: source relative to $PSScriptRoot, destination relative to $HOME.
 $mappings = @(
     @{ source = 'config/glazewm/config.yaml'; destination = '.glzr/glazewm/config.yaml' }
+    @{ source = 'config/zebar'; destination = '.glzr/zebar' }
     @{ source = '../Shared/tmux/tmux.conf'; destination = '.tmux.conf' }
     @{ source = '../Shared/tmux/tmux.windows.conf'; destination = '.tmux.os.conf' }
     @{ source = '../Shared/tmux/scripts'; destination = '.local/scripts/worktree' }
-    @{ source = 'config/herdr/config.toml'; destination = 'AppData/Roaming/herdr/config.toml' }
-    @{ source = 'config/herdr-plus'; destination = 'AppData/Roaming/herdr/plugins/config/cloudmanic.herdr-plus' }
     @{ source = '../Linux/.config/nvim'; destination = 'AppData/Local/nvim' }
+    @{ source = 'config/windows-terminal/settings.json'; destination = 'AppData/Local/Packages/Microsoft.WindowsTerminal_8wekyb3d8bbwe/LocalState/settings.json' }
 )
 
 $srcRoot = $PSScriptRoot
@@ -81,3 +81,18 @@ Write-Host "Reloading GlazeWM config..." -ForegroundColor Cyan
 glazewm command wm-reload-config
 
 Write-Host "Done." -ForegroundColor Green
+
+$Folder = Join-Path (Join-Path $PSScriptRoot "Tools") "scripts"
+echo "Ziel-Ordner: $Folder"
+
+$RegPath = [Environment]::GetEnvironmentVariable("Path", "User")
+$CurrentDirs = $RegPath -split ";" | Where-Object { $_ -ne "" }
+
+if ($Folder -notin $CurrentDirs) {
+    $NewPath = ($CurrentDirs + $Folder) -join ";"
+    [Environment]::SetEnvironmentVariable("Path", $NewPath, "User")
+    Write-Host "Erfolgreich hinzugefügt: $Folder" -ForegroundColor Green
+} else {
+    Write-Host "Ordner existiert bereits im PATH." -ForegroundColor Yellow
+}
+

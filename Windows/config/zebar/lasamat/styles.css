@@ -1,0 +1,126 @@
+@import "vendors/webfont.css";
+@import "vendors/catppuccin.css";
+
+i {
+  color: var(--ctp-mocha-surface2);
+  margin-right: 7px;
+}
+
+body {
+  color: var(--ctp-mocha-text);
+  font-family: sans-serif;
+  font-size: 12px;
+  overflow: hidden;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  background-color: transparent !important;
+  background: transparent !important;
+}
+
+#root {
+  background: var(--ctp-mocha-crust);
+}
+
+.app {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  align-items: center;
+  height: 100%;
+  padding: 4px 1.5vw;
+}
+
+.left,
+.center,
+.right {
+  display: flex;
+  align-items: center;
+}
+
+.center {
+  justify-self: center;
+}
+
+.right {
+  justify-self: end;
+}
+
+.logo,
+.binding-mode,
+.tiling-direction,
+.network,
+.memory,
+.cpu,
+.battery {
+  margin-right: 20px;
+}
+
+.workspaces {
+  display: flex;
+  align-items: center;
+}
+
+.workspace {
+  background: var(--ctp-mocha-surface0);
+  margin-right: 4px;
+  padding: 4px 8px;
+  color: var(--ctp-mocha-text);
+  border: none;
+  border-radius: 25px;
+  cursor: pointer;
+
+  &.displayed {
+    background: var(--ctp-mocha-surface2);
+  }
+
+  &.focused,
+  &:hover {
+    background: var(--ctp-mocha-mauve);
+    color: var(--ctp-mocha-crust);
+  }
+}
+
+.binding-mode,
+.tiling-direction {
+  background: var(--ctp-mocha-surface0);
+  color: var(--ctp-mocha-text);
+  border-radius: 25px;
+  line-height: 1;
+  padding: 4px 8px;
+  border: 0;
+  cursor: pointer;
+  &:hover {
+    background: var(--ctp-mocha-mauve);
+    color: var(--ctp-mocha-crust);
+  }
+}
+
+.binding-mode {
+  margin-right: 4px;
+}
+
+.cpu .high-usage {
+  color: var(--ctp-mocha-red);
+}
+
+.weather .cold {
+  color: var(--ctp-mocha-teal);
+}
+
+.weather .hot {
+  color: var(--ctp-mocha-red);
+}
+
+.battery {
+  position: relative;
+}
+
+.battery .charging-icon {
+  position: absolute;
+  font-size: 7px;
+  left: -8px;
+  top: 3px;
+}

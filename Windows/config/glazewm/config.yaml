@@ -1,3 +1,108 @@
+ctp-latte-rosewater: &ctp-latte-rosewater "#dc8a78"
+ctp-latte-flamingo: &ctp-latte-flamingo "#dd7878"
+ctp-latte-pink: &ctp-latte-pink "#ea76cb"
+ctp-latte-mauve: &ctp-latte-mauve "#8839ef"
+ctp-latte-red: &ctp-latte-red "#d20f39"
+ctp-latte-maroon: &ctp-latte-maroon "#e64553"
+ctp-latte-peach: &ctp-latte-peach "#fe640b"
+ctp-latte-yellow: &ctp-latte-yellow "#df8e1d"
+ctp-latte-green: &ctp-latte-green "#40a02b"
+ctp-latte-teal: &ctp-latte-teal "#179299"
+ctp-latte-sky: &ctp-latte-sky "#04a5e5"
+ctp-latte-sapphire: &ctp-latte-sapphire "#209fb5"
+ctp-latte-blue: &ctp-latte-blue "#1e66f5"
+ctp-latte-lavender: &ctp-latte-lavender "#7287fd"
+ctp-latte-text: &ctp-latte-text "#4c4f69"
+ctp-latte-subtext1: &ctp-latte-subtext1 "#5c5f77"
+ctp-latte-subtext0: &ctp-latte-subtext0 "#6c6f85"
+ctp-latte-overlay2: &ctp-latte-overlay2 "#7c7f93"
+ctp-latte-overlay1: &ctp-latte-overlay1 "#8c8fa1"
+ctp-latte-overlay0: &ctp-latte-overlay0 "#9ca0b0"
+ctp-latte-surface2: &ctp-latte-surface2 "#acb0be"
+ctp-latte-surface1: &ctp-latte-surface1 "#bcc0cc"
+ctp-latte-surface0: &ctp-latte-surface0 "#ccd0da"
+ctp-latte-base: &ctp-latte-base "#eff1f5"
+ctp-latte-mantle: &ctp-latte-mantle "#e6e9ef"
+ctp-latte-crust: &ctp-latte-crust "#dce0e8"
+ctp-frappe-rosewater: &ctp-frappe-rosewater "#f2d5cf"
+ctp-frappe-flamingo: &ctp-frappe-flamingo "#eebebe"
+ctp-frappe-pink: &ctp-frappe-pink "#f4b8e4"
+ctp-frappe-mauve: &ctp-frappe-mauve "#ca9ee6"
+ctp-frappe-red: &ctp-frappe-red "#e78284"
+ctp-frappe-maroon: &ctp-frappe-maroon "#ea999c"
+ctp-frappe-peach: &ctp-frappe-peach "#ef9f76"
+ctp-frappe-yellow: &ctp-frappe-yellow "#e5c890"
+ctp-frappe-green: &ctp-frappe-green "#a6d189"
+ctp-frappe-teal: &ctp-frappe-teal "#81c8be"
+ctp-frappe-sky: &ctp-frappe-sky "#99d1db"
+ctp-frappe-sapphire: &ctp-frappe-sapphire "#85c1dc"
+ctp-frappe-blue: &ctp-frappe-blue "#8caaee"
+ctp-frappe-lavender: &ctp-frappe-lavender "#babbf1"
+ctp-frappe-text: &ctp-frappe-text "#c6d0f5"
+ctp-frappe-subtext1: &ctp-frappe-subtext1 "#b5bfe2"
+ctp-frappe-subtext0: &ctp-frappe-subtext0 "#a5adce"
+ctp-frappe-overlay2: &ctp-frappe-overlay2 "#949cbb"
+ctp-frappe-overlay1: &ctp-frappe-overlay1 "#838ba7"
+ctp-frappe-overlay0: &ctp-frappe-overlay0 "#737994"
+ctp-frappe-surface2: &ctp-frappe-surface2 "#626880"
+ctp-frappe-surface1: &ctp-frappe-surface1 "#51576d"
+ctp-frappe-surface0: &ctp-frappe-surface0 "#414559"
+ctp-frappe-base: &ctp-frappe-base "#303446"
+ctp-frappe-mantle: &ctp-frappe-mantle "#292c3c"
+ctp-frappe-crust: &ctp-frappe-crust "#232634"
+ctp-macchiato-rosewater: &ctp-macchiato-rosewater "#f4dbd6"
+ctp-macchiato-flamingo: &ctp-macchiato-flamingo "#f0c6c6"
+ctp-macchiato-pink: &ctp-macchiato-pink "#f5bde6"
+ctp-macchiato-mauve: &ctp-macchiato-mauve "#c6a0f6"
+ctp-macchiato-red: &ctp-macchiato-red "#ed8796"
+ctp-macchiato-maroon: &ctp-macchiato-maroon "#ee99a0"
+ctp-macchiato-peach: &ctp-macchiato-peach "#f5a97f"
+ctp-macchiato-yellow: &ctp-macchiato-yellow "#eed49f"
+ctp-macchiato-green: &ctp-macchiato-green "#a6da95"
+ctp-macchiato-teal: &ctp-macchiato-teal "#8bd5ca"
+ctp-macchiato-sky: &ctp-macchiato-sky "#91d7e3"
+ctp-macchiato-sapphire: &ctp-macchiato-sapphire "#7dc4e4"
+ctp-macchiato-blue: &ctp-macchiato-blue "#8aadf4"
+ctp-macchiato-lavender: &ctp-macchiato-lavender "#b7bdf8"
+ctp-macchiato-text: &ctp-macchiato-text "#cad3f5"
+ctp-macchiato-subtext1: &ctp-macchiato-subtext1 "#b8c0e0"
+ctp-macchiato-subtext0: &ctp-macchiato-subtext0 "#a5adcb"
+ctp-macchiato-overlay2: &ctp-macchiato-overlay2 "#939ab7"
+ctp-macchiato-overlay1: &ctp-macchiato-overlay1 "#8087a2"
+ctp-macchiato-overlay0: &ctp-macchiato-overlay0 "#6e738d"
+ctp-macchiato-surface2: &ctp-macchiato-surface2 "#5b6078"
+ctp-macchiato-surface1: &ctp-macchiato-surface1 "#494d64"
+ctp-macchiato-surface0: &ctp-macchiato-surface0 "#363a4f"
+ctp-macchiato-base: &ctp-macchiato-base "#24273a"
+ctp-macchiato-mantle: &ctp-macchiato-mantle "#1e2030"
+ctp-macchiato-crust: &ctp-macchiato-crust "#181926"
+ctp-mocha-rosewater: &ctp-mocha-rosewater "#f5e0dc"
+ctp-mocha-flamingo: &ctp-mocha-flamingo "#f2cdcd"
+ctp-mocha-pink: &ctp-mocha-pink "#f5c2e7"
+ctp-mocha-mauve: &ctp-mocha-mauve "#cba6f7"
+ctp-mocha-red: &ctp-mocha-red "#f38ba8"
+ctp-mocha-maroon: &ctp-mocha-maroon "#eba0ac"
+ctp-mocha-peach: &ctp-mocha-peach "#fab387"
+ctp-mocha-yellow: &ctp-mocha-yellow "#f9e2af"
+ctp-mocha-green: &ctp-mocha-green "#a6e3a1"
+ctp-mocha-teal: &ctp-mocha-teal "#94e2d5"
+ctp-mocha-sky: &ctp-mocha-sky "#89dceb"
+ctp-mocha-sapphire: &ctp-mocha-sapphire "#74c7ec"
+ctp-mocha-blue: &ctp-mocha-blue "#89b4fa"
+ctp-mocha-lavender: &ctp-mocha-lavender "#b4befe"
+ctp-mocha-text: &ctp-mocha-text "#cdd6f4"
+ctp-mocha-subtext1: &ctp-mocha-subtext1 "#bac2de"
+ctp-mocha-subtext0: &ctp-mocha-subtext0 "#a6adc8"
+ctp-mocha-overlay2: &ctp-mocha-overlay2 "#9399b2"
+ctp-mocha-overlay1: &ctp-mocha-overlay1 "#7f849c"
+ctp-mocha-overlay0: &ctp-mocha-overlay0 "#6c7086"
+ctp-mocha-surface2: &ctp-mocha-surface2 "#585b70"
+ctp-mocha-surface1: &ctp-mocha-surface1 "#45475a"
+ctp-mocha-surface0: &ctp-mocha-surface0 "#313244"
+ctp-mocha-base: &ctp-mocha-base "#1e1e2e"
+ctp-mocha-mantle: &ctp-mocha-mantle "#181825"
+ctp-mocha-crust: &ctp-mocha-crust "#11111b"
+
 general:
   # Commands to run when the WM has started. This is useful for running a
   # script or launching another application.
@@ -32,7 +137,7 @@ gaps:
   scale_with_dpi: true
 
   # Gap between adjacent windows.
-  inner_gap: '2px'
+  inner_gap: '8px'
 
   # Gap between windows and the screen edge.
   outer_gap:
@@ -48,7 +153,7 @@ window_effects:
     # ** Exclusive to Windows 11 due to API limitations.
     border:
       enabled: true
-      color: '#8dbcff'
+      color: *ctp-mocha-blue
 
     # Remove the title bar from the window's frame. Note that this can
     # cause rendering issues for some applications.
@@ -62,16 +167,26 @@ window_effects:
       # Allowed values: 'square', 'rounded', 'small_rounded'.
       style: 'square'
 
+    # Change the transparency of the window.
+    transparency:
+      enabled: true
+      # Can be something like '95%' or '0.95' for slightly transparent windows.
+      # '0' or '0%' is fully transparent (and, by consequence, unfocusable).
+      opacity: '90%'
+
   # Visual effects to apply to non-focused windows.
   other_windows:
     border:
       enabled: true
-      color: '#a1a1a1'
+      color: *ctp-mocha-overlay0
     hide_title_bar:
       enabled: false
     corner_style:
       enabled: false
       style: 'square'
+    transparency:
+      enabled: true
+      opacity: '50%'
 
 window_behavior:
   # New windows are created in this state whenever possible.
@@ -100,13 +215,13 @@ window_behavior:
 workspaces:
   - name: "1"
     display_name: "1 - Home"
-    keep_alive: true
+    keep_alive: false
   - name: "2"
     display_name: "2 - Web"
-    keep_alive: true
+    keep_alive: false
   - name: "3"
     display_name: "3 - Terminal"
-    keep_alive: true
+    keep_alive: false
   - name: "4"
     display_name: "4 - Dev Browser"
     keep_alive: false
@@ -184,11 +299,112 @@ window_rules:
     match:
       - window_process: { regex: 'obsidian|Super Productivity' }
 
-
 binding_modes:
-  # When enabled, the focused window can be resized via arrow keys or HJKL.
-  - name: 'resize'
+  - name: 'glazeWM'
     keybindings:
+      # Enter rezise mode
+      - commands: ['wm-enable-binding-mode --name window']
+        bindings: ['w']
+
+      # Enter move mode
+      - commands: ['wm-enable-binding-mode --name move']
+        bindings: ['m']
+
+      # Exit glazeWM mode
+      - commands: ['wm-disable-binding-mode --name glazeWM']
+        bindings: ['escape', 'alt+g']
+
+      # Re-evaluate configuration file.
+      - commands: ['wm-disable-binding-mode --name glazeWM', 'wm-reload-config']
+        bindings: ['r']
+
+      # Shift focus in a given direction.
+      - commands: ['focus --direction left']
+        bindings: ['h']
+      - commands: ['focus --direction right']
+        bindings: ['l']
+      - commands: ['focus --direction up']
+        bindings: ['k']
+      - commands: ['focus --direction down']
+        bindings: ['j']
+
+      # Change focus to a workspace defined in `workspaces` config.
+      - commands: ['focus --workspace 1']
+        bindings: ['1']
+      - commands: ['focus --workspace 2']
+        bindings: ['2']
+      - commands: ['focus --workspace 3']
+        bindings: ['3']
+      - commands: ['focus --workspace 4']
+        bindings: ['4']
+      - commands: ['focus --workspace 5']
+        bindings: ['5']
+      - commands: ['focus --workspace 6']
+        bindings: ['6']
+      - commands: ['focus --workspace 7']
+        bindings: ['7']
+      - commands: ['focus --workspace 8']
+        bindings: ['8']
+      - commands: ['focus --workspace 9']
+        bindings: ['9']
+
+      # Change the focused window to be floating.
+      - commands: ['set-floating --centered']
+        bindings: ['space']
+
+      # Change the focused window to be tiling.
+      - commands: ['set-tiling']
+        bindings: ['t']
+
+      # Change the tiling direction
+      - commands: ['toggle-tiling-direction']
+        bindings: ['v']
+
+      # Change the focused window to be fullscreen.
+      - commands: ['set-fullscreen']
+        bindings: ['f']
+
+      # Close focused window.
+      - commands: ['close']
+        bindings: ['q']
+
+      # Launch CMD terminal. Alternatively, use `shell-exec wt` or
+      # `shell-exec %ProgramFiles%/Git/git-bash.exe` to start Windows
+      # Terminal and Git Bash respectively.
+        # wt alias is broken for me so we use a workaround
+        # cmd /c opens a cmd terminal, runs a command and closes afterwards
+      - commands: ['shell-exec cmd /c start wt']
+        bindings: ['alt+enter']
+
+      - commands: ['shell-exec --hide-window pwsh -ExecutionPolicy Bypass -File C:\Entwicklung\Machine_Setups\Windows\Tools\keybindings\keybindings-lookup.ps1']
+        bindings: ['shift+oem_question']
+
+  - name: 'move'
+    keybindings:
+      # Move focused window to a workspace defined in `workspaces` config.
+      - commands: ['move --workspace 1', 'focus --workspace 1', 'wm-enable-binding-mode --name glazeWM']
+        bindings: ['1']
+      - commands: ['move --workspace 2', 'focus --workspace 2', 'wm-enable-binding-mode --name glazeWM']
+        bindings: ['2']
+      - commands: ['move --workspace 3', 'focus --workspace 3', 'wm-enable-binding-mode --name glazeWM']
+        bindings: ['3']
+      - commands: ['move --workspace 4', 'focus --workspace 4', 'wm-enable-binding-mode --name glazeWM']
+        bindings: ['4']
+      - commands: ['move --workspace 5', 'focus --workspace 5', 'wm-enable-binding-mode --name glazeWM']
+        bindings: ['5']
+      - commands: ['move --workspace 6', 'focus --workspace 6', 'wm-enable-binding-mode --name glazeWM']
+        bindings: ['6']
+      - commands: ['move --workspace 7', 'focus --workspace 7', 'wm-enable-binding-mode --name glazeWM']
+        bindings: ['7']
+      - commands: ['move --workspace 8', 'focus --workspace 8', 'wm-enable-binding-mode --name glazeWM']
+        bindings: ['8']
+      - commands: ['move --workspace 9', 'focus --workspace 9', 'wm-enable-binding-mode --name glazeWM']
+        bindings: ['9']
+
+  # When enabled, the focused window can be resized via arrow keys or HJKL.
+  - name: 'window'
+    keybindings:
+      # Resize focused window
       - commands: ['resize --width -2%']
         bindings: ['h', 'left']
       - commands: ['resize --width +2%']
@@ -197,169 +413,60 @@ binding_modes:
         bindings: ['k', 'up']
       - commands: ['resize --height -2%']
         bindings: ['j', 'down']
-      # Press enter/escape to return to default keybindings.
-      - commands: ['wm-disable-binding-mode --name resize']
-        bindings: ['escape', 'enter']
 
-  # When enabled, all keybindings are disabled except for alt+shift+p which
-  # returns to default keybindings.
-  - name: 'pause'
-    keybindings:
-      - commands: ['wm-disable-binding-mode --name pause']
-        bindings: ['alt+shift+p']
+      # Move focused window in a given direction.
+      - commands: ['move --direction left']
+        bindings: ['control+h']
+      - commands: ['move --direction right']
+        bindings: ['cotrol+l']
+      - commands: ['move --direction up']
+        bindings: ['control+k']
+      - commands: ['move --direction down']
+        bindings: ['control+j']
+
+      # Redraw all windows.
+      - commands: ['wm-redraw']
+        bindings: ['r']
+
+      # Change background image
+      - commands: ['shell-exec --hide-window pwsh -Command RandomWallpaper.ps1']
+        bindings: ['b']
+
+      # Toggle Taskbar Visibility
+      - commands: ['shell-exec --hide-window pwsh -Command ToggleTaskbar.ps1']
+        bindings: ['t']
+
+      # Set Transparency of active window
+      - commands: ["set-transparency --opacity 10%"]
+        bindings: ["1"]
+      - commands: ["set-transparency --opacity 20%"]
+        bindings: ["2"]
+      - commands: ["set-transparency --opacity 30%"]
+        bindings: ["3"]
+      - commands: ["set-transparency --opacity 40%"]
+        bindings: ["4"]
+      - commands: ["set-transparency --opacity 50%"]
+        bindings: ["5"]
+      - commands: ["set-transparency --opacity 60%"]
+        bindings: ["6"]
+      - commands: ["set-transparency --opacity 70%"]
+        bindings: ["7"]
+      - commands: ["set-transparency --opacity 80%"]
+        bindings: ["8"]
+      - commands: ["set-transparency --opacity 90%"]
+        bindings: ["9"]
+        
+      # Alt + 0 setzt das Fenster wieder komplett deckend (100%)
+      - commands: ["set-transparency --opacity 100%"]
+        bindings: ["0"]
+
+
+      # Press enter/escape to return to default keybindings.
+      - commands: ['wm-disable-binding-mode --name window']
+        bindings: ['escape']
 
 keybindings:
-  # Shift focus in a given direction.
-  - commands: ['focus --direction left']
-    #bindings: ['alt+h', 'alt+left']
-    bindings: ['alt+left']
-  - commands: ['focus --direction right']
-    #bindings: ['alt+l', 'alt+right']
-    bindings: ['alt+right']
-  - commands: ['focus --direction up']
-    #bindings: ['alt+k', 'alt+up']
-    bindings: ['alt+up']
-  - commands: ['focus --direction down']
-    #bindings: ['alt+j', 'alt+down']
-    bindings: ['alt+down']
 
-  # Move focused window in a given direction.
-  #- commands: ['move --direction left']
-  #  bindings: ['alt+shift+h', 'alt+shift+left']
-  #- commands: ['move --direction right']
-  #  bindings: ['alt+shift+l', 'alt+shift+right']
-  #- commands: ['move --direction up']
-  #  bindings: ['alt+shift+k', 'alt+shift+up']
-  #- commands: ['move --direction down']
-  #  bindings: ['alt+shift+j', 'alt+shift+down']
+  - commands: ['wm-enable-binding-mode --name glazeWM']
+    bindings: ['alt+g']
 
-  # Resize focused window by a percentage or pixel amount.
-  #- commands: ['resize --width -2%']
-  #  bindings: ['alt+u']
-  #- commands: ['resize --width +2%']
-  #  bindings: ['alt+p']
-  #- commands: ['resize --height +2%']
-  #  bindings: ['alt+o']
-  #- commands: ['resize --height -2%']
-  #  bindings: ['alt+i']
-
-  # As an alternative to the resize keybindings above, resize mode enables
-  # resizing via arrow keys or HJKL. The binding mode is defined above with
-  # the name 'resize'.
-  - commands: ['wm-enable-binding-mode --name resize']
-    bindings: ['alt+r']
-
-  # Disables all keybindings until alt+shift+p is pressed again.
-  - commands: ['wm-enable-binding-mode --name pause']
-    bindings: ['alt+shift+p']
-
-  # Change tiling direction. This determines where new tiling windows will
-  # be inserted.
-  - commands: ['toggle-tiling-direction']
-    bindings: ['alt+v']
-
-  # Change focus from tiling windows -> floating -> fullscreen.
-  #- commands: ['wm-cycle-focus']
-  #  bindings: ['alt+space']
-
-  # Change the focused window to be floating.
-  - commands: ['toggle-floating --centered']
-    bindings: ['alt+shift+space']
-
-  # Change the focused window to be tiling.
-  - commands: ['toggle-tiling']
-    bindings: ['alt+t']
-
-  # Change the focused window to be fullscreen.
-  - commands: ['toggle-fullscreen']
-    bindings: ['alt+f']
-
-  # Minimize focused window.
-  - commands: ['toggle-minimized']
-    bindings: ['alt+m']
-
-  # Close focused window.
-  - commands: ['close']
-    bindings: ['alt+shift+q']
-
-  # Kill GlazeWM process safely.
-  - commands: ['wm-exit']
-    bindings: ['alt+shift+e']
-
-  # Re-evaluate configuration file.
-  - commands: ['wm-reload-config']
-    bindings: ['alt+shift+r']
-
-  # Redraw all windows.
-  - commands: ['wm-redraw']
-    bindings: ['alt+shift+w']
-
-  # Launch CMD terminal. Alternatively, use `shell-exec wt` or
-  # `shell-exec %ProgramFiles%/Git/git-bash.exe` to start Windows
-  # Terminal and Git Bash respectively.
-  - commands: ['shell-exec cmd']
-    bindings: ['alt+enter']
-
-  - commands: ['shell-exec --hide-window pwsh -ExecutionPolicy Bypass -File C:\Entwicklung\Machine_Setups\Windows\Tools\keybindings\keybindings-lookup.ps1']
-    bindings: ['alt+shift+g']
-
-  # Focus the next/previous workspace defined in `workspaces` config.
-  - commands: ['focus --next-workspace']
-    bindings: ['alt+s']
-  - commands: ['focus --prev-workspace']
-    bindings: ['alt+a']
-
-  # Focus the workspace that last had focus.
-  - commands: ['focus --recent-workspace']
-    bindings: ['alt+d']
-
-  # Change focus to a workspace defined in `workspaces` config.
-  - commands: ['focus --workspace 1']
-    bindings: ['alt+1']
-  - commands: ['focus --workspace 2']
-    bindings: ['alt+2']
-  - commands: ['focus --workspace 3']
-    bindings: ['alt+3']
-  - commands: ['focus --workspace 4']
-    bindings: ['alt+4']
-  - commands: ['focus --workspace 5']
-    bindings: ['alt+5']
-  - commands: ['focus --workspace 6']
-    bindings: ['alt+6']
-  - commands: ['focus --workspace 7']
-    bindings: ['alt+7']
-  - commands: ['focus --workspace 8']
-    bindings: ['alt+8']
-  - commands: ['focus --workspace 9']
-    bindings: ['alt+9']
-
-  # Move the focused window's parent workspace to a monitor in a given
-  # direction.
-  - commands: ['move-workspace --direction left']
-    bindings: ['alt+shift+a']
-  - commands: ['move-workspace --direction right']
-    bindings: ['alt+shift+f']
-  - commands: ['move-workspace --direction up']
-    bindings: ['alt+shift+d']
-  - commands: ['move-workspace --direction down']
-    bindings: ['alt+shift+s']
-
-  # Move focused window to a workspace defined in `workspaces` config.
-  - commands: ['move --workspace 1', 'focus --workspace 1']
-    bindings: ['alt+shift+1']
-  - commands: ['move --workspace 2', 'focus --workspace 2']
-    bindings: ['alt+shift+2']
-  - commands: ['move --workspace 3', 'focus --workspace 3']
-    bindings: ['alt+shift+3']
-  - commands: ['move --workspace 4', 'focus --workspace 4']
-    bindings: ['alt+shift+4']
-  - commands: ['move --workspace 5', 'focus --workspace 5']
-    bindings: ['alt+shift+5']
-  - commands: ['move --workspace 6', 'focus --workspace 6']
-    bindings: ['alt+shift+6']
-  - commands: ['move --workspace 7', 'focus --workspace 7']
-    bindings: ['alt+shift+7']
-  - commands: ['move --workspace 8', 'focus --workspace 8']
-    bindings: ['alt+shift+8']
-  - commands: ['move --workspace 9', 'focus --workspace 9']
-    bindings: ['alt+shift+9']
